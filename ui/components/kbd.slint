@@ -1,0 +1,22 @@
+import { Theme } from "../theme.slint";
+import { HorizontalBox } from "std-widgets.slint";
+export { Theme }
+
+export component Kbd inherits Rectangle {
+  in property <string> label;  
+
+  background: Theme.shape;
+  border-radius: 6px;
+  
+  HorizontalLayout {
+      padding-left: 5px;
+      padding-right: 5px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+      Text {
+        color: Theme.text;
+        text: label;
+        font-weight: 600;
+      }
+    }
+}

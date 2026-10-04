@@ -1,18 +1,34 @@
-import { Button, VerticalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+import { Kbd } from "components/kbd.slint";
+import { Footer } from "components/footer.slint";
+export { Theme }
 
 export component AppWindow inherits Window {
+  width: 720px;
+  height: 400px;
+  no-frame: true;
+  always-on-top: true;
+  title: "Althea";
+  default-font-family: "Segoe UI Variable Text";
+  default-font-size: 14px;
+  background: transparent;
+  
   in-out property <int> counter: 42;
   callback request-increase-value();
-  VerticalBox {
-    Text {
-      text: "Counter: \{root.counter}";
-    }
+  
+  Rectangle {
+    border-radius: 8px;
+    background: Theme.neutral.transparentize(0.4);
+    border-width: 1px;
+    border-color: Theme.neutralSecondary.transparentize(0.7);
 
-    Button {
-      text: "Increase value";
-      clicked => {
-        root.request-increase-value();
+    VerticalLayout {
+      Rectangle {
+        vertical-stretch: 1;
       }
+  
+      Footer { }
     }
   }
 }
