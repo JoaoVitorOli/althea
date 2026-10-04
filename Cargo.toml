@@ -6,8 +6,13 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-slint = "1.18.1"
+slint = { version = "1.18.1", features = ["raw-window-handle-06", "unstable-winit-030"] }
 display-info = "0.5"
+
+[features]
+# Reload the .slint UI at runtime when the files change (dev only).
+# Build with SLINT_LIVE_PREVIEW=1 set, see README.
+hot-reload = ["slint/live-preview"]
 
 [build-dependencies]
 slint-build = "1.18.1"

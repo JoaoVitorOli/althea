@@ -27,6 +27,21 @@ Rust code, how to react to callbacks, get and set properties, and use basic widg
     cargo run
     ```
 
+### Hot reload
+
+Run with the `hot-reload` feature and the `SLINT_LIVE_PREVIEW` env var set at build time.
+The `.slint` files are then interpreted at runtime and the window reloads on save (Rust changes still need a restart):
+
+```powershell
+$env:SLINT_LIVE_PREVIEW=1; cargo run --features hot-reload
+```
+
+```bash
+SLINT_LIVE_PREVIEW=1 cargo run --features hot-reload
+```
+
+Plain `cargo run` / `cargo build --release` keep the normal compiled UI.
+
 We recommend using an IDE for development, along with our [LSP-based IDE integration for `.slint` files](https://github.com/slint-ui/slint/blob/master/tools/lsp/README.md). You can also load this project directly in [Visual Studio Code](https://code.visualstudio.com) and install our [Slint extension](https://marketplace.visualstudio.com/items?itemName=Slint.slint).
 
 ## Next Steps
