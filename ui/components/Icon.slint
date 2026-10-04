@@ -1,0 +1,11 @@
+import { Theme } from "../theme.slint";
+
+export component Icon inherits Image {
+  in property <length> size: 18px;
+  in property <color> color: Theme.text;
+
+  width: root.size;
+  height: root.size;
+  colorize: root.color;
+  image-fit: contain;
+}

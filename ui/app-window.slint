@@ -1,8 +1,14 @@
-import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Button, VerticalBox, HorizontalBox, ListView, ScrollView } from "std-widgets.slint";
 import { Theme } from "theme.slint";
 import { Kbd } from "components/kbd.slint";
 import { Footer } from "components/footer.slint";
+import { Search } from "components/search.slint";
 export { Theme }
+
+struct Item {
+  text: string,
+  color: color,
+}
 
 export component AppWindow inherits Window {
   width: 720px;
@@ -16,19 +22,151 @@ export component AppWindow inherits Window {
   
   in-out property <int> counter: 42;
   callback request-increase-value();
-  
-  Rectangle {
-    border-radius: 8px;
-    background: Theme.neutral.transparentize(0.4);
-    border-width: 1px;
-    border-color: Theme.neutralSecondary.transparentize(0.7);
 
-    VerticalLayout {
-      Rectangle {
-        vertical-stretch: 1;
-      }
+  forward-focus: search;
+
+  in-out property <[Item]> items: [
+    { text: "Blue" },
+    { text: "Red" },
+    { text: "Green" },
+    { text: "Yellow" },
+    { text: "Black" },
+    { text: "White" },
+    { text: "Magenta" },
+    { text: "Cyan" },
+    { text: "Blue" },
+    { text: "Red" },
+    { text: "Green" },
+    { text: "Yellow" },
+    { text: "Black" },
+    { text: "White" },
+    { text: "Magenta" },
+    { text: "Cyan" },
+    { text: "Blue" },
+    { text: "Red" },
+    { text: "Green" },
+    { text: "Yellow" },
+    { text: "Black" },
+    { text: "White" },
+    { text: "Magenta" },
+    { text: "Cyan" },
+    { text: "Blue" },
+    { text: "Red" },
+    { text: "Green" },
+    { text: "Yellow" },
+    { text: "Black" },
+    { text: "White" },
+    { text: "Magenta" },
+    { text: "Cyan" },
+    { text: "Blue" },
+    { text: "Red" },
+    { text: "Green" },
+    { text: "Yellow" },
+    { text: "Black" },
+    { text: "White" },
+    { text: "Magenta" },
+    { text: "Cyan" },
+  ];
+  in-out property <int> selected: 0;
+  callback activated(int);
+
+  property <length> item-height: 38px;
   
-      Footer { }
+  property <length> list-offset: 76px;
+
+  function scroll-to-selected() {
+    let top = root.selected * root.item-height;
+    let bottom = top + root.item-height + list-offset;
+    if root.selected == 0 {
+      list.viewport-y = 0;
+    } else if top < -list.viewport-y {
+      list.viewport-y = -top;
+    } else if bottom > -list.viewport-y + list.visible-height {
+      list.viewport-y = -(bottom - list.visible-height);
     }
   }
-}
+  
+  keys := FocusScope {
+    capture-key-pressed(e) => { 
+      if e.text == Key.DownArrow {
+        root.selected = Math.min(root.selected + 1, root.items.length - 1);
+        root.scroll-to-selected();
+        return accept;
+      }
+      if e.text == Key.UpArrow {
+        root.selected = Math.max(root.selected - 1, 0);
+        root.scroll-to-selected();
+        return accept;
+      }
+      if e.text == Key.Return {
+        root.activated(root.selected);
+        return accept;
+      }
+      return reject;
+    }
+  
+    Rectangle {
+      border-radius: 8px;
+      background: Theme.neutral.transparentize(0.4);
+      border-width: 1px;
+      border-color: Theme.neutralSecondary.transparentize(0.7);
+      
+      VerticalLayout {
+        search := Search {
+          edited(text) => {
+            root.selected = 0;
+            list.viewport-y = 0;
+          }
+        }
+        
+        list := ScrollView {
+          vertical-stretch: 1;
+          
+          VerticalLayout {
+            padding: 8px;
+            spacing: 12px;
+            
+            Text {
+              text: "Apps";
+              font-size: 12px;
+              padding-bottom: 12px;
+              color: Theme.neutralSecondary;
+            }
+            
+            VerticalLayout {
+              for item[i] in root.items : Rectangle {
+                height: root.item-height;
+                border-radius: 8px;
+                background: i == root.selected
+                  ? Theme.neutralSecondary.transparentize(0.8)
+                  : transparent;
+  
+                Text {
+                  x: 10px;
+                  text: item.text;
+                  vertical-alignment: center;
+                  font-weight: 600;
+                }
+                Text {
+                  x: 10px;
+                  text: item.text;
+                  vertical-alignment: center;
+                  font-weight: 600;
+                }
+    
+                TouchArea {
+                  moved => { root.selected = i; }
+                  clicked => {
+                    root.selected = i;
+                    root.activated(i);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        Footer { }
+      }
+    }}
+  }

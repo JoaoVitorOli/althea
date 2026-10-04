@@ -1,0 +1,90 @@
+import { Theme } from "../theme.slint";
+import { Icon } from "Icon.slint";
+export { Theme }
+
+export component Search inherits Rectangle {
+  height: 62px;
+
+  in-out property <string> text <=> input.text;
+  in property <string> placeholder: "Search";
+  in property <bool> enabled: true;
+  out property <bool> has-focus: input.has-focus;
+  callback edited(string);
+  callback accepted(string);
+
+  forward-focus: input;     
+
+  states [
+    disabled when !root.enabled : {
+      input.color: Theme.neutralSecondary.transparentize(0.5);
+      placeholder-text.color: Theme.neutralSecondary.transparentize(0.6);
+      bar.background: transparent;
+    }
+    focused when input.has-focus : {
+      
+    }
+    hover when touch.has-hover : {
+      bar.background: Theme.neutralSecondary.transparentize(0.5);
+    }
+  ]
+
+  touch := TouchArea {
+    mouse-cursor: root.enabled ? MouseCursor.text : MouseCursor.default;
+    clicked => { if root.enabled { input.focus(); } }
+  }
+
+  Rectangle {
+    x: 16px;
+    width: parent.width - 17px;
+    clip: true;
+
+    placeholder-text := Text {
+      x: 30px;
+      text: root.placeholder;
+      visible: input.text == "" && input.preedit-text == "";
+      font-size: 20px;
+      color: Theme.neutralSecondary;
+      vertical-alignment: center;
+    }
+
+    input := TextInput {
+      x: 30px;
+      width: max(parent.width, self.preferred-width);
+      vertical-alignment: center;
+      font-size: 20px;
+      color: Theme.text;
+      selection-background-color: Theme.primary.transparentize(0.6);
+      selection-foreground-color: Theme.text;
+      enabled: root.enabled;
+      single-line: true;
+      accessible-placeholder-text: root.placeholder;
+
+      edited => { root.edited(self.text); }
+      accepted => { root.accepted(self.text); }
+
+      // private property <length> margin: 1rem;
+      // cursor-position-changed(cursor-position) => {
+      //   if cursor-position.x + self.x < margin {
+      //     self.x = - cursor-position.x + margin;
+      //   } else if cursor-position.x + self.x > parent.width - margin - self.text-cursor-width {
+      //     self.x = parent.width - cursor-position.x - margin - self.text-cursor-width;
+      //   }
+      // }
+    }
+  }
+
+  Icon {
+    source: @image-url("../icons/search.svg");
+    size: 20px;
+    color: Theme.neutralSecondary;
+    x: 16px;
+    vertical-alignment: center;
+  }
+
+  bar := Rectangle {
+    y: parent.height - 1px;
+    height: 1px;
+    background: Theme.neutralSecondary.transparentize(0.8);
+    animate background { duration: 120ms; }
+  }
+}
