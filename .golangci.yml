@@ -33,6 +33,7 @@ linters:
       excludes:
         - G103 # unsafe is required for Win32 calls; reviewed per call site
         - G304 # reading files the user configures (settings, themes, scripts) is the point
+        - G703 # likewise writing them: paths come from internal/paths, not from input
         - G104 # unchecked errors are errcheck's, which knows the Win32 exceptions
     misspell:
       locale: US
