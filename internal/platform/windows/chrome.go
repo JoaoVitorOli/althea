@@ -24,7 +24,8 @@ type Chrome struct{}
 func (Chrome) SetBorderColor(handle uintptr, c platform.Color) error {
 	colorref := uint32(c.R) | uint32(c.G)<<8 | uint32(c.B)<<16
 	hr, _, _ := procDwmSetWindowAttribute.Call(
-		handle, dwmwaBorderColor, uintptr(unsafe.Pointer(&colorref)), unsafe.Sizeof(colorref))
+		handle, dwmwaBorderColor, uintptr(unsafe.Pointer(&colorref)), unsafe.Sizeof(colorref),
+	)
 	if hr != 0 {
 		return fmt.Errorf("DwmSetWindowAttribute(border color): HRESULT %#x", hr)
 	}

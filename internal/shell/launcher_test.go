@@ -4,9 +4,9 @@ import "testing"
 
 func TestPosition(t *testing.T) {
 	tests := []struct {
-		name                   string
-		areaX, areaY, w, h     int
-		wantX, wantY           int
+		name               string
+		areaX, areaY, w, h int
+		wantX, wantY       int
 	}{
 		{"primary 1080p", 0, 0, 1920, 1040, 600, 260},
 		{"display to the right", 1920, 0, 2560, 1400, 1920 + 920, 350},

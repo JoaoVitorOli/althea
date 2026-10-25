@@ -1,0 +1,19 @@
+# Git hooks. Install once with: go tool lefthook install
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      glob: "*.go"
+      run: go tool -modfile=tools/go.mod golangci-lint fmt {staged_files}
+      stage_fixed: true
+    lint:
+      glob: "*.go"
+      run: go tool -modfile=tools/go.mod golangci-lint run ./...
+    mod-tidy:
+      glob: "{go.mod,go.sum}"
+      run: go mod tidy -diff
+
+commit-msg:
+  commands:
+    conventional:
+      run: go -C tools run ./commitlint {1}

@@ -1,0 +1,99 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose
+    - depguard
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - noctx
+    - nolintlint
+    - revive
+    - unconvert
+    - unparam
+    - usestdlibvars
+  settings:
+    gocritic:
+      enabled-tags: [diagnostic, performance, style]
+      disabled-checks:
+        - hugeParam # MyGo passes options structs by value
+        - unnamedResult
+        - whyNoLint # nolintlint already requires explanations
+    gosec:
+      excludes:
+        - G103 # unsafe is required for Win32 calls; reviewed per call site
+    misspell:
+      locale: US
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: var-naming
+        - name: indent-error-flow
+        - name: error-strings
+        - name: error-return
+        - name: receiver-naming
+        - name: unused-parameter
+        - name: context-as-argument
+        - name: early-return
+    depguard:
+      # The layering in docs/architecture.md, enforced.
+      rules:
+        sdk-is-pure:
+          files: ["**/sdk/*.go"]
+          deny:
+            - pkg: github.com/egoist/mygo
+              desc: the public sdk must not depend on MyGo (use sdk/custom)
+            - pkg: github.com/JoaoVitorOli/althea/internal
+              desc: the public sdk must not expose internal packages
+        extensions-use-sdk:
+          files: ["**/extensions/**"]
+          deny:
+            - pkg: github.com/JoaoVitorOli/althea/internal
+              desc: extensions use only the public sdk (docs/adr/0003-extensions.md)
+        core-is-ui-free:
+          files:
+            - "**/internal/config/**"
+            - "**/internal/i18n/**"
+            - "**/internal/logging/**"
+            - "**/internal/netpolicy/**"
+            - "**/internal/paths/**"
+            - "**/internal/registry/**"
+            - "**/internal/scripts/**"
+            - "**/internal/search/**"
+            - "**/internal/secrets/**"
+            - "**/internal/store/**"
+            - "**/internal/theme/**"
+          deny:
+            - pkg: github.com/egoist/mygo
+              desc: core packages stay UI-free so they run and test anywhere (docs/architecture.md)
+  exclusions:
+    presets:
+      - std-error-handling
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx]
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/JoaoVitorOli/althea)
