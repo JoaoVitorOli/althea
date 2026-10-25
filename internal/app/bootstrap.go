@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
+	"sync"
 	"sync/atomic"
 
 	"github.com/JoaoVitorOli/althea/internal/config"
@@ -23,7 +25,17 @@ type core struct {
 	catalog  *i18n.Catalog
 	settings atomic.Pointer[config.Settings]
 
+	mu        sync.Mutex
+	listeners []func(config.Settings)
+
 	closers []func() error // in the order they were opened
+}
+
+// OnSettings calls fn, on the watcher's goroutine, with the settings each time they reload.
+func (c *core) OnSettings(fn func(config.Settings)) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.listeners = append(c.listeners, fn)
 }
 
 // bootstrap opens Althea's services in the directories of p. Locale is the system's, used when
@@ -88,6 +100,12 @@ func (c *core) reloaded(s config.Settings, problems []config.Problem, err error)
 	c.logProblems(problems)
 	c.settings.Store(&s)
 	c.log.Info("settings reloaded")
+	c.mu.Lock()
+	listeners := slices.Clone(c.listeners)
+	c.mu.Unlock()
+	for _, fn := range listeners {
+		fn(s)
+	}
 }
 
 func (c *core) logProblems(problems []config.Problem) {

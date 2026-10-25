@@ -1,3 +1,15 @@
 [launcher]
 title = "Althea"
+search_placeholder = "Busque apps e comandos…"
+search_label = "Buscar"
+empty = "Digite para buscar"
+hint_toggle = "{hotkey} para mostrar ou esconder"
 hint_close = "Esc para fechar"
+
+[tray]
+open = "Abrir o Althea"
+settings = "Configurações…"
+themes = "Pasta de temas"
+logs = "Pasta de logs"
+start_at_login = "Iniciar com o Windows"
+quit = "Sair do Althea"
