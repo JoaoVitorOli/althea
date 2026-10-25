@@ -1,8 +1,9 @@
-package theme
+package ui
 
 import "github.com/egoist/mygo/ui"
 
-var Althea = func() *ui.Theme {
+// darkTheme is Althea's built-in dark palette. M1 replaces it with themes loaded from TOML.
+var darkTheme = func() *ui.Theme {
 	t := ui.DarkTheme()
 	t.Background = ui.Hex("#15171f")
 	t.Surface = ui.Hex("#1e2130")
@@ -21,9 +22,3 @@ var Althea = func() *ui.Theme {
 	t.Focus = ui.RGBA(123, 140, 240, 0.55)
 	return t
 }()
-
-var (
-	Eye         = ui.Hex("#b0306a")
-	Footer      = ui.Hex("#1e2130")
-	RowSelected = ui.RGBA(123, 140, 240, 0.16)
-)

@@ -2,5 +2,7 @@
   "name": "althea",
   "identifier": "com.joaovitoroli.althea",
   "version": "0.1.0",
+  "copyright": "© 2026 João Vitor. GPL-3.0-or-later.",
+  "main": "./cmd/althea",
   "out": "build"
 }
