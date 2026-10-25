@@ -38,8 +38,17 @@ type System interface {
 	SetDarkMode(on bool) error
 }
 
+// SingleInstance keeps one instance of Althea per user.
+type SingleInstance interface {
+	// Lock returns true in the first instance, which keeps the lock until release and hears of
+	// later launches through onSecond, on a goroutine of its own. A later instance gets false,
+	// after telling the first, and should exit.
+	Lock(name string, onSecond func()) (first bool, release func(), err error)
+}
+
 // Services are the platform services of the running system.
 type Services struct {
+	Instance SingleInstance
 	// System is nil where Althea cannot act on the computer yet, as on Linux before v1.1.
 	System System
 	Chrome WindowChrome

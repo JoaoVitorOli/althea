@@ -9,6 +9,7 @@ import (
 // Services returns the Windows services.
 func Services() platform.Services {
 	return platform.Services{
-		Chrome: windows.Chrome{}, KeyHook: windows.KeyHook{}, System: windows.System{}, Locale: windows.Locale,
+		Chrome: windows.Chrome{}, KeyHook: windows.KeyHook{}, System: windows.System{},
+		Instance: windows.SingleInstance{}, Locale: windows.Locale,
 	}
 }

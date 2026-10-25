@@ -67,6 +67,8 @@ func (l *Launcher) Window() *mygo.Window { return l.win }
 
 // Show shows the launcher on the display with the pointer.
 func (l *Launcher) Show() {
+	start := time.Now()
+	defer func() { l.opts.Log.Info("shown", "took", time.Since(start)) }()
 	d := mygo.Screen.DisplayNearestPoint(mygo.Screen.CursorScreenPoint())
 	w, _ := l.win.Size()
 	l.win.SetPosition(Position(d.WorkArea, w))

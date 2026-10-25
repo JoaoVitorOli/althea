@@ -4,6 +4,8 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -27,24 +29,39 @@ import (
 
 // Run starts Althea and blocks until it quits. A second launch shows the running instance.
 func Run() (err error) {
-	if !mygo.App.RequestSingleInstanceLock() {
-		return nil // the running Althea shows itself (OnSecondInstance)
-	}
+	started := time.Now()
 	services := host.Services()
 	p, err := paths.Resolve(runtime.GOOS, os.Getenv, portableDir())
 	if err != nil {
 		return err
 	}
+
+	// One Althea per set of data: a portable copy runs beside an installed one.
+	a := &althea{services: services, started: started}
+	first, release, err := services.Instance.Lock(instanceName(p.Data), func() {
+		mygo.RunOnMain(func() {
+			if a.launcher != nil {
+				a.launcher.Show()
+			}
+		})
+	})
+	if err != nil {
+		return err
+	}
+	if !first {
+		return nil // the running Althea shows itself
+	}
+	defer release()
+
 	c, err := bootstrap(context.Background(), p, services.Locale())
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Join(err, c.Close()) }()
+	a.core = c
 
-	a := &althea{core: c, services: services}
 	mygo.App.SetName("Althea")
 	mygo.App.OnWindowAllClosed(func() {}) // keep running in the tray with the launcher hidden
-	mygo.App.OnSecondInstance(func([]string, string) { a.launcher.Show() })
 	mygo.App.WhenReady(a.ready)
 	if err := mygo.App.Run(); err != nil {
 		c.log.Error("app stopped", "err", err)
@@ -59,6 +76,7 @@ func Run() (err error) {
 type althea struct {
 	*core
 	services platform.Services
+	started  time.Time
 
 	launcher *shell.Launcher
 	root     *ui.Root
@@ -106,7 +124,7 @@ func (a *althea) ready() {
 	if firstRun || !mygo.App.WasOpenedAtLogin() {
 		a.launcher.Show() // started by the user: show what it does
 	}
-	a.log.Info("ready", "hotkey", a.hotkey, "theme", a.root.Theme().Name)
+	a.log.Info("ready", "hotkey", a.hotkey, "theme", a.root.Theme().Name, "since_start", time.Since(a.started))
 }
 
 // onboarded saves the onboarding's choices, off the main thread, and turns to the search. The
@@ -270,4 +288,10 @@ func portableDir() string {
 		return ""
 	}
 	return dir
+}
+
+// instanceName names the single-instance lock of the data in dir.
+func instanceName(dir string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(filepath.Clean(dir))))
+	return "com.joaovitoroli.althea." + hex.EncodeToString(sum[:6])
 }
