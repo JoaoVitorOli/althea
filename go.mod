@@ -1,8 +1,6 @@
 module github.com/JoaoVitorOli/althea
 
-go 1.27.1
-
-toolchain go1.27.2
+go 1.27.3
 
 tool (
 	github.com/egoist/mygo/cmd/mygo
@@ -10,7 +8,7 @@ tool (
 )
 
 require (
-	github.com/egoist/mygo v0.2.12
+	github.com/egoist/mygo v0.6.4
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/pelletier/go-toml/v2 v2.4.3
 	go.uber.org/goleak v1.3.0
@@ -76,7 +74,7 @@ require (
 	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/term v0.46.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/text v0.43.0 // indirect
 	modernc.org/libc v1.79.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
