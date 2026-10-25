@@ -68,7 +68,7 @@ func (r *Registry) Refresh(ctx context.Context) error {
 	for _, e := range r.exts {
 		id := e.Manifest().ID
 		var cmds []sdk.Command
-		if err := r.guard(id, "commands", func() error { cmds = e.Commands(); return nil }); err != nil {
+		if err := r.guard(id, "commands", func() error { cmds = e.Commands(r.deps.Context(ctx, id)); return nil }); err != nil {
 			continue
 		}
 		for _, c := range cmds {

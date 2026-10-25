@@ -26,8 +26,8 @@ type fake struct {
 	answer   func(ctx context.Context, q string) (*sdk.Item, error)
 }
 
-func (f *fake) Manifest() sdk.Manifest  { return sdk.Manifest{ID: f.id, Title: f.id} }
-func (f *fake) Commands() []sdk.Command { return f.commands }
+func (f *fake) Manifest() sdk.Manifest             { return sdk.Manifest{ID: f.id, Title: f.id} }
+func (f *fake) Commands(sdk.Context) []sdk.Command { return f.commands }
 
 type source struct{ *fake }
 
@@ -42,11 +42,12 @@ type hostContext struct {
 	log *slog.Logger
 }
 
-func (h hostContext) Log() *slog.Logger   { return h.log }
-func (hostContext) Open(string) error     { return nil }
-func (hostContext) CopyText(string) error { return nil }
-func (hostContext) Hide()                 {}
-func (hostContext) Toast(string)          {}
+func (h hostContext) Log() *slog.Logger           { return h.log }
+func (hostContext) Open(string) error             { return nil }
+func (hostContext) CopyText(string) error         { return nil }
+func (hostContext) Hide()                         {}
+func (hostContext) Toast(string)                  {}
+func (hostContext) T(key string, _ ...any) string { return key }
 
 func newRegistry(t *testing.T, exts ...sdk.Extension) *registry.Registry {
 	t.Helper()

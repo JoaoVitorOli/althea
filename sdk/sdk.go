@@ -8,14 +8,16 @@ package sdk
 
 import (
 	"context"
+	"io/fs"
 	"log/slog"
 )
 
 // Extension is a unit of features.
 type Extension interface {
 	Manifest() Manifest
-	// Commands are what the extension does, found from the root search.
-	Commands() []Command
+	// Commands are what the extension does, found from the root search. Ctx translates
+	// their titles.
+	Commands(ctx Context) []Command
 }
 
 // Manifest describes an extension.
@@ -25,6 +27,8 @@ type Manifest struct {
 	ID    string
 	Title string
 	Icon  Icon
+	// Messages are the extension's catalogs, en.toml and pt-BR.toml, for Context.T.
+	Messages fs.FS
 }
 
 // Command is something the user runs from the root search.
@@ -98,4 +102,7 @@ type Context interface {
 	Hide()
 	// Toast shows a short message in the launcher.
 	Toast(message string)
+	// T translates a key of the extension's Messages into the user's language, filling
+	// {name} placeholders from args given as name, value pairs.
+	T(key string, args ...any) string
 }
