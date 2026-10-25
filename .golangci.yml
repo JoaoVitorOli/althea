@@ -29,6 +29,7 @@ linters:
         - hugeParam # MyGo passes options structs by value
         - unnamedResult
         - whyNoLint # nolintlint already requires explanations
+        - rangeValCopy # readability first; hot loops are benchmarked instead
     gosec:
       excludes:
         - G103 # unsafe is required for Win32 calls; reviewed per call site
