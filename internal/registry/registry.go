@@ -192,3 +192,10 @@ func (r *Registry) guard(ext, what string, fn func() error) (err error) {
 	}
 	return err
 }
+
+// Len returns how many items and commands the last refresh found.
+func (r *Registry) Len() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.items)
+}

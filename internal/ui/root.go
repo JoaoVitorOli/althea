@@ -44,6 +44,7 @@ type Root struct {
 	selected int
 	armed    armed  // the action waiting to be confirmed
 	notice   string // shown in the footer, as a confirmation asked
+	toasts   []string
 	list     ui.ListState
 	actions  actionPanel
 }
@@ -109,6 +110,11 @@ func (r *Root) View(c *ui.Context) {
 		r.Onboarding.View(c)
 		return
 	}
+
+	for _, msg := range r.toasts {
+		c.Toast(msg)
+	}
+	r.toasts = nil
 
 	r.keys(c)
 
@@ -351,3 +357,6 @@ func (r *Root) actionShortcut(ev ui.InputEvent) bool {
 	}
 	return false
 }
+
+// Toast shows a short message over the launcher on the next frame.
+func (r *Root) Toast(message string) { r.toasts = append(r.toasts, message) }

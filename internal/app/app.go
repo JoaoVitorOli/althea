@@ -63,6 +63,7 @@ type althea struct {
 	launcher *shell.Launcher
 	root     *ui.Root
 	tray     *shell.Tray
+	search   *searcher
 	hotkey   string
 	unbind   func()
 }
@@ -78,10 +79,16 @@ func (a *althea) ready() {
 			if reset {
 				a.root.Reset()
 			}
+			if a.search != nil {
+				go a.search.refresh()
+			}
 		},
 		Log: a.log,
 	})
 	a.applyChrome()
+	if err := a.setUpSearch(); err != nil {
+		a.log.Error("search not set up", "err", err)
+	}
 	a.bindHotkey(s.Hotkey.Toggle)
 	a.syncLogin(s.General.StartAtLogin)
 	a.setUpTray()

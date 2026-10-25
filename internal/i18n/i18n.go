@@ -125,3 +125,6 @@ func Match(locale string) string {
 	}
 	return fallback
 }
+
+// Language is the language the catalog translates into.
+func (c *Catalog) Language() string { return c.lang }

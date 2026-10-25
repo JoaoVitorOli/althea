@@ -26,8 +26,22 @@ type KeyHook interface {
 	Mask()
 }
 
+// System acts on the computer, for the System extension.
+type System interface {
+	Lock() error
+	Sleep() error
+	Restart() error
+	ShutDown() error
+	SignOut() error
+	EmptyRecycleBin() error
+	IsDarkMode() bool
+	SetDarkMode(on bool) error
+}
+
 // Services are the platform services of the running system.
 type Services struct {
+	// System is nil where Althea cannot act on the computer yet, as on Linux before v1.1.
+	System System
 	Chrome WindowChrome
 	// KeyHook is nil where the system has no such hook, as on Linux.
 	KeyHook KeyHook
