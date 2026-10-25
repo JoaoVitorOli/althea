@@ -28,6 +28,7 @@ linters:
     gosec:
       excludes:
         - G103 # unsafe is required for Win32 calls; reviewed per call site
+        - G304 # reading files the user configures (settings, themes, scripts) is the point
     misspell:
       locale: US
     nolintlint:
@@ -63,6 +64,7 @@ linters:
         core-is-ui-free:
           files:
             - "**/internal/config/**"
+            - "**/internal/fswatch/**"
             - "**/internal/i18n/**"
             - "**/internal/logging/**"
             - "**/internal/netpolicy/**"
@@ -81,7 +83,7 @@ linters:
       - std-error-handling
     rules:
       - path: _test\.go
-        linters: [gosec, noctx]
+        linters: [gosec, noctx, misspell] # tests misspell on purpose
 
 formatters:
   enable:

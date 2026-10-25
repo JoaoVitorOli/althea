@@ -11,6 +11,9 @@ tool (
 
 require (
 	github.com/egoist/mygo v0.2.12
+	github.com/fsnotify/fsnotify v1.10.1
+	github.com/pelletier/go-toml/v2 v2.4.3
+	go.uber.org/goleak v1.3.0
 	golang.org/x/sys v0.49.0
 )
 
@@ -55,7 +58,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/pelletier/go-toml/v2 v2.4.3 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/schollz/progressbar/v3 v3.19.1 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
