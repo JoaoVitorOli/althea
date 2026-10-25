@@ -3,6 +3,8 @@
 // the running system, and tests use fakes.
 package platform
 
+import "github.com/JoaoVitorOli/althea/internal/hotkey"
+
 // Color is an opaque RGB color, as the system draws window frames.
 type Color struct{ R, G, B uint8 }
 
@@ -12,9 +14,23 @@ type WindowChrome interface {
 	SetBorderColor(handle uintptr, c Color) error
 }
 
+// KeyHook watches every key the user presses, system-wide, for the hotkeys a system cannot
+// register, as the Win key alone. Only Althea's own detection reads the events; they are never
+// stored (docs/adr/0009-hooks.md).
+type KeyHook interface {
+	// Start calls handle with each key event, on the hook's own thread, until stop is called.
+	// Handle must return at once: the system drops hooks that keep it waiting.
+	Start(handle func(hotkey.KeyEvent)) (stop func(), err error)
+	// Mask presses and releases hotkey.VKMask, which keeps the system from acting on a Win key
+	// Althea used. Call it from handle, before the Win key's release goes on.
+	Mask()
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Chrome WindowChrome
+	// KeyHook is nil where the system has no such hook, as on Linux.
+	KeyHook KeyHook
 	// Locale returns the user's display language, such as "pt-BR", or "" when unknown.
 	Locale func() string
 }

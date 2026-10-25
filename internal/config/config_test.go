@@ -94,7 +94,7 @@ reset_after = "-5s"
 	wantProblems := []config.Problem{
 		{Line: 2, Key: "general.language", Message: `must be "system", "en" or "pt-BR"`},
 		{Line: 6, Key: "theme.dark", Message: "must not be empty"},
-		{Line: 9, Key: "hotkey.toggle", Message: "must not be empty"},
+		{Line: 9, Key: "hotkey.toggle", Message: `must be "Win" or a combination such as "Alt+Space"`},
 		{Line: 12, Key: "window.reset_after", Message: "must not be negative"},
 	}
 	if !slices.Equal(problems, wantProblems) {

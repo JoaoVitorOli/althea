@@ -19,6 +19,10 @@ linters:
     - unparam
     - usestdlibvars
   settings:
+    errcheck:
+      exclude-functions:
+        # Win32 calls report through their first result, checked where it matters.
+        - (*golang.org/x/sys/windows.LazyProc).Call
     gocritic:
       enabled-tags: [diagnostic, performance, style]
       disabled-checks:
@@ -29,6 +33,7 @@ linters:
       excludes:
         - G103 # unsafe is required for Win32 calls; reviewed per call site
         - G304 # reading files the user configures (settings, themes, scripts) is the point
+        - G104 # unchecked errors are errcheck's, which knows the Win32 exceptions
     misspell:
       locale: US
     nolintlint:

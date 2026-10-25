@@ -16,6 +16,7 @@ import (
 
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/fswatch"
+	"github.com/JoaoVitorOli/althea/internal/hotkey"
 	"github.com/JoaoVitorOli/althea/internal/paths"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/platform/host"
@@ -154,13 +155,45 @@ func (a *althea) bindHotkey(shortcut string) {
 		a.unbind()
 		a.unbind = nil
 	}
-	if err := mygo.GlobalShortcut.Register(shortcut, a.launcher.Toggle); err != nil {
-		a.log.Warn("hotkey not registered", "hotkey", shortcut, "err", err)
-		a.hotkey, a.root.Hotkey = "", ""
+	a.hotkey, a.root.Hotkey = "", ""
+	b, err := hotkey.Parse(shortcut)
+	if err != nil {
+		a.log.Warn("hotkey not understood", "hotkey", shortcut, "err", err)
 		return
 	}
-	a.unbind = func() { mygo.GlobalShortcut.Unregister(shortcut) }
+	if b.WinKey {
+		a.unbind, err = a.bindWinKey()
+	} else {
+		err = mygo.GlobalShortcut.Register(b.Accelerator, a.launcher.Toggle)
+		a.unbind = func() { mygo.GlobalShortcut.Unregister(b.Accelerator) }
+	}
+	if err != nil {
+		a.unbind = nil
+		a.log.Warn("hotkey not registered", "hotkey", shortcut, "err", err)
+		return
+	}
 	a.hotkey, a.root.Hotkey = shortcut, shortcut
+	a.log.Info("hotkey bound", "hotkey", shortcut)
+}
+
+// bindWinKey opens the launcher when the Win key is tapped alone, through the keyboard hook,
+// keeping the Start menu closed for those taps. Win with another key still reaches Windows.
+func (a *althea) bindWinKey() (unbind func(), err error) {
+	keys := a.services.KeyHook
+	if keys == nil {
+		return nil, errors.New("this system cannot watch the Win key")
+	}
+	var tap hotkey.WinTap // used on the hook's thread alone
+	return keys.Start(func(e hotkey.KeyEvent) {
+		tapped, mask := tap.Feed(e)
+		if mask {
+			keys.Mask()
+		}
+		if tapped {
+			// The hook must return at once: toggle on the main thread, later.
+			go a.launcher.Window().Update(a.launcher.Toggle)
+		}
+	})
 }
 
 func (a *althea) syncLogin(start bool) {

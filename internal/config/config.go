@@ -16,6 +16,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
+	"github.com/JoaoVitorOli/althea/internal/hotkey"
 	"github.com/JoaoVitorOli/althea/internal/tomlpos"
 )
 
@@ -181,7 +182,10 @@ func parse(data []byte) (Settings, []Problem, error) {
 	nonEmpty("theme.name", &s.Theme.Name, defaults.Theme.Name)
 	nonEmpty("theme.dark", &s.Theme.Dark, defaults.Theme.Dark)
 	nonEmpty("theme.light", &s.Theme.Light, defaults.Theme.Light)
-	nonEmpty("hotkey.toggle", &s.Hotkey.Toggle, defaults.Hotkey.Toggle)
+	if _, err := hotkey.Parse(s.Hotkey.Toggle); err != nil {
+		invalid("hotkey.toggle", `must be "Win" or a combination such as "Alt+Space"`)
+		s.Hotkey.Toggle = defaults.Hotkey.Toggle
+	}
 	if text := f.Window.ResetAfter; text != nil {
 		d, err := time.ParseDuration(*text)
 		switch {
