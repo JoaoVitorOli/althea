@@ -8,5 +8,5 @@ import (
 
 // Services returns the Windows services.
 func Services() platform.Services {
-	return platform.Services{Chrome: windows.Chrome{}}
+	return platform.Services{Chrome: windows.Chrome{}, Locale: windows.Locale}
 }

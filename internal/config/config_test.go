@@ -119,6 +119,34 @@ func TestLoadFailsOnSyntaxErrorWithLine(t *testing.T) {
 	}
 }
 
+func TestWriteDefaultCreatesACommentedFileOfTheDefaults(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "Althea", "settings.toml")
+	if err := config.WriteDefault(path); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "# ") {
+		t.Error("default settings file has no comments")
+	}
+	s, problems, err := config.Load(path)
+	if err != nil || len(problems) != 0 || s != config.Defaults() {
+		t.Errorf("Load(default file) = %+v, %v, %v; want the defaults", s, problems, err)
+	}
+}
+
+func TestWriteDefaultKeepsAnExistingFile(t *testing.T) {
+	path := write(t, "[general]\nlanguage = \"en\"\n")
+	if err := config.WriteDefault(path); err != nil {
+		t.Fatal(err)
+	}
+	if s, _, _ := config.Load(path); s.General.Language != "en" {
+		t.Error("WriteDefault replaced the user's file")
+	}
+}
+
 func TestLoadOverridesOnlyWhatTheFileSets(t *testing.T) {
 	path := write(t, `
 # my settings

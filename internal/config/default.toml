@@ -1,0 +1,24 @@
+# Althea settings
+#
+# Saving this file applies it at once. A mistake is reported in Althea and leaves that
+# setting at its default; the settings screen edits this same file.
+
+schema = 1
+
+[general]
+# "system" follows Windows; or "en", "pt-BR".
+language = "system"
+# A theme from the themes folder, by file name without .toml.
+theme = "althea-dark"
+start_at_login = true
+# Checks GitHub for new versions. Nothing else is ever sent (no telemetry).
+check_updates = false
+
+[hotkey]
+# Shows and hides Althea: a combination such as "Alt+Space" or "Ctrl+Shift+Space",
+# or "Win" for the Windows key on its own.
+toggle = "Alt+Space"
+
+[window]
+# How long Althea remembers where you were while hidden; "0s" always opens at the start.
+reset_after = "1m30s"

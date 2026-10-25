@@ -4,10 +4,12 @@ package config
 
 import (
 	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -66,6 +68,29 @@ func Defaults() Settings {
 	}
 }
 
+//go:embed default.toml
+var defaultFile []byte
+
+// WriteDefault writes the commented settings file of the defaults at path, creating its
+// directory, unless a file is already there.
+func WriteDefault(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return fmt.Errorf("write default settings: %w", err)
+	}
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if errors.Is(err, fs.ErrExist) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("write default settings: %w", err)
+	}
+	if _, err := f.Write(defaultFile); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("write default settings: %w", err)
+	}
+	return f.Close()
+}
+
 // Problem is a mistake in the settings file.
 type Problem struct {
 	Line    int    // 1-based; 0 when unknown
@@ -80,6 +105,8 @@ func (p Problem) String() string {
 // file is the settings file as written: values that need parsing or checking are read as
 // text first, so a mistake in one costs only that setting.
 type file struct {
+	// Schema is the version of the file's format, 1 so far.
+	Schema  int     `toml:"schema"`
 	General General `toml:"general"`
 	Hotkey  Hotkey  `toml:"hotkey"`
 	Window  struct {

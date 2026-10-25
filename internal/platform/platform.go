@@ -15,4 +15,6 @@ type WindowChrome interface {
 // Services are the platform services of the running system.
 type Services struct {
 	Chrome WindowChrome
+	// Locale returns the user's display language, such as "pt-BR", or "" when unknown.
+	Locale func() string
 }
