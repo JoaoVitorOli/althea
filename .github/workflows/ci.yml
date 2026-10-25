@@ -12,6 +12,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    # PowerShell, Windows' default, splits -modfile=tools/go.mod at the dot.
+    shell: bash
+
 jobs:
   lint:
     name: Lint (${{ matrix.os }})
