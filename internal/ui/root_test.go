@@ -67,3 +67,17 @@ func TestResetEmptiesTheSearch(t *testing.T) {
 		t.Errorf("after Reset: query %q, search focused %v", r.query, tt.Focused("Search"))
 	}
 }
+
+func TestRootShowsTheOnboardingWhileSet(t *testing.T) {
+	r := newRoot(t, "en")
+	r.Onboarding = NewOnboarding(r.T, Motion{Scale: 1}, Choices{Hotkey: "Alt+Space", Theme: "system"}, true, func(Choices) {})
+	tt := ui.NewTester(r.View, 720, 420)
+	if !tt.HasText("Welcome to Althea") || tt.HasText("Type to search") {
+		t.Errorf("texts %q, want the onboarding alone", tt.Texts())
+	}
+	r.Onboarding = nil
+	tt.Frame()
+	if !tt.HasText("Type to search") {
+		t.Errorf("texts %q after the onboarding, want the search", tt.Texts())
+	}
+}

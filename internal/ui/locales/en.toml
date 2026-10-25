@@ -13,3 +13,37 @@ themes = "Themes Folder"
 logs = "Logs Folder"
 start_at_login = "Start with Windows"
 quit = "Quit Althea"
+
+[onboarding]
+start = "Get started"
+continue = "Continue"
+back = "Back"
+finish = "Start using Althea"
+
+[onboarding.welcome]
+title = "Welcome to Althea"
+body = "Open apps, run commands and use your tools from one search bar. It takes a minute to set up."
+
+[onboarding.hotkey]
+title = "Choose your hotkey"
+body = "Press it anywhere to show or hide Althea."
+record = "Record a hotkey"
+listening = "Press the keys…"
+win = "Win key"
+
+[onboarding.theme]
+title = "Pick a look"
+system = "Match system"
+dark = "Dark"
+light = "Light"
+
+[onboarding.preferences]
+title = "A few preferences"
+login = "Start with Windows"
+login_hint = "Althea waits in the tray, ready for your hotkey."
+updates = "Check for updates"
+updates_hint = "Only asks GitHub for new versions. Nothing else is ever sent."
+
+[onboarding.done]
+title = "You're all set"
+body = "Press {hotkey} anywhere to open Althea."

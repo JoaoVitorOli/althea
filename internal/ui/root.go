@@ -25,6 +25,8 @@ type Root struct {
 	T func(key string, args ...any) string
 	// Hotkey is the shortcut that shows the launcher, for the footer.
 	Hotkey string
+	// Onboarding, while set, shows in place of the search.
+	Onboarding *Onboarding
 
 	theme theme.Theme
 	ui    *ui.Theme
@@ -65,6 +67,12 @@ func (r *Root) View(c *ui.Context) {
 		bg.A = 255
 	}
 	c.Root().Background(bg)
+
+	if r.Onboarding != nil {
+		r.Onboarding.Motion = MotionOf(r.theme)
+		r.Onboarding.View(c)
+		return
+	}
 
 	// Escape clears the search first; an Escape left to the window hides it.
 	if r.query != "" && c.Shortcut(0, ui.KeyEscape) {

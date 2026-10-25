@@ -13,3 +13,37 @@ themes = "Pasta de temas"
 logs = "Pasta de logs"
 start_at_login = "Iniciar com o Windows"
 quit = "Sair do Althea"
+
+[onboarding]
+start = "Começar"
+continue = "Continuar"
+back = "Voltar"
+finish = "Começar a usar o Althea"
+
+[onboarding.welcome]
+title = "Boas-vindas ao Althea"
+body = "Abra apps, rode comandos e use suas ferramentas a partir de uma barra de busca. A configuração leva um minuto."
+
+[onboarding.hotkey]
+title = "Escolha seu atalho"
+body = "Pressione-o em qualquer lugar para mostrar ou esconder o Althea."
+record = "Gravar um atalho"
+listening = "Pressione as teclas…"
+win = "Tecla Win"
+
+[onboarding.theme]
+title = "Escolha um visual"
+system = "Seguir o sistema"
+dark = "Escuro"
+light = "Claro"
+
+[onboarding.preferences]
+title = "Algumas preferências"
+login = "Iniciar com o Windows"
+login_hint = "O Althea espera na bandeja, pronto para o seu atalho."
+updates = "Procurar atualizações"
+updates_hint = "Só pergunta ao GitHub se há versões novas. Nada mais é enviado."
+
+[onboarding.done]
+title = "Tudo pronto"
+body = "Pressione {hotkey} em qualquer lugar para abrir o Althea."

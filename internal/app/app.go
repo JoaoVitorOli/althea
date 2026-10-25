@@ -91,10 +91,29 @@ func (a *althea) ready() {
 	a.OnSettings(func(s config.Settings) { a.launcher.Window().Update(func() { a.apply(s) }) })
 	mygo.Theme.OnUpdated(func() { a.launcher.Window().Update(a.reloadTheme) })
 
-	if !mygo.App.WasOpenedAtLogin() {
+	firstRun := a.needsOnboarding(context.Background())
+	if firstRun {
+		a.root.Onboarding = ui.NewOnboarding(a.catalog.T, ui.MotionOf(a.root.Theme()), choicesOf(s),
+			a.services.KeyHook != nil, a.onboarded)
+	}
+	if firstRun || !mygo.App.WasOpenedAtLogin() {
 		a.launcher.Show() // started by the user: show what it does
 	}
 	a.log.Info("ready", "hotkey", a.hotkey, "theme", a.root.Theme().Name)
+}
+
+// onboarded saves the onboarding's choices, off the main thread, and turns to the search. The
+// settings watcher applies the choices as the file changes.
+func (a *althea) onboarded(ch ui.Choices) {
+	a.root.Onboarding = nil
+	a.root.Reset()
+	go func() {
+		if err := a.finishOnboarding(context.Background(), ch); err != nil {
+			a.log.Error("onboarding not saved", "err", err)
+			return
+		}
+		a.log.Info("onboarding finished", "hotkey", ch.Hotkey, "theme", ch.Theme)
+	}()
 }
 
 // apply brings the running app in step with reloaded settings.
