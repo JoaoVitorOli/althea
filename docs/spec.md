@@ -1,4 +1,4 @@
-# Althea v1 — Product Spec
+# Althea v1: Product Spec
 
 Althea is a keyboard-first launcher for the desktop: one hotkey opens a search bar from which you
 launch apps, run commands and use built-in tools. Features other launchers keep for paid plans

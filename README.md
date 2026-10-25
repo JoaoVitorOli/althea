@@ -1,37 +1,66 @@
 # Althea
 
-A keyboard-first launcher for the desktop — with the features others charge for, free, private by
-default, and easy to extend.
+One hotkey, one search bar, and the rest of your computer is a few keystrokes away: apps,
+system commands, math, and soon clipboard history, snippets, window layouts, AI and offline
+translation.
 
-> **Status:** in development towards v1. Windows 11 first, Linux in v1.1.
+Launchers like this usually keep their best features behind a subscription and send your usage
+somewhere. Althea ships every feature free, keeps everything on your machine, and treats every
+feature as an extension you can read, change or add to in a fork.
 
-## Highlights (v1)
+> **Status:** working towards v1. Windows 11 first; Linux follows in v1.1.
 
-- Launch apps, files and commands from one search bar, ranked by how you use them.
-- Calculator, clipboard history, snippets, quicklinks, emoji, window management and layouts.
-- AI with your own keys or local models, offline translation, floating notes, sync through your
-  own folder — no subscription.
-- Themes you can write or edit visually, with glass materials and considered motion.
-- Every feature is an extension: fork it and add yours with one package and one line.
-- No telemetry. Nothing leaves your machine unless you ask.
+## What works today
 
-## Documentation
+- **The launcher.** Alt+Space (or the Win key alone) opens a panel over every app, on the
+  display with your pointer, on Acrylic. It hides when you click elsewhere and remembers where
+  you were for a minute and a half.
+- **Search.** Apps (Win32 and Store) and commands, matched fuzzily: "vsc" finds Visual Studio
+  Code, "configuracoes" finds Configurações. What you pick often and recently ranks higher, and
+  Althea learns per query: pick Slack after typing "s" and "s" means Slack.
+- **Calculator.** `150 + 10%`, `20% of 150`, `255 in hex`, `10 km in mi`, `100 f to c`. Decimal
+  commas work, and answers come back in your language's format. Enter copies.
+- **System.** Lock, sleep, restart, shut down, sign out, empty the Recycle Bin, toggle dark mode.
+  Anything you cannot undo asks for a second Enter.
+- **Themes.** TOML files you can edit while Althea runs. They inherit from each other, and
+  `system` follows Windows between light and dark.
+- **English and Portuguese**, following Windows or your settings.
 
-- [Product spec](docs/spec.md) — what v1 does
-- [Architecture](docs/architecture.md) — how it is built
-- [Decision records](docs/adr/README.md) — why
-- [Contributing](CONTRIBUTING.md) — setup, tooling and conventions
+The [spec](docs/spec.md) has everything v1 will do and the milestones towards it.
 
-## Building
+## Run it
 
-Requires Go 1.27+.
+Requires Go 1.27.3 or later. Every other tool is pinned in a `go.mod`.
 
 ```bash
-go tool mygo dev      # run with live reload
-go test ./...         # run the tests
-go tool mygo build    # build installers into build/
+go tool mygo dev
 ```
+
+The first run walks you through the hotkey, the theme and a couple of preferences. Settings
+live in `%APPDATA%\Althea\settings.toml`, commented, and apply as you save.
+
+## Make it yours
+
+Every feature, the built-in ones included, is a Go package that implements the public
+[`sdk`](sdk/sdk.go). Adding one to a fork is a new package in [`extensions/`](extensions/) and
+one line in [`extensions/builtin.go`](extensions/builtin.go). The
+[extensions README](extensions/README.md) explains the boundary to keep.
+
+## Read more
+
+| Document | Answers |
+|---|---|
+| [Spec](docs/spec.md) | What v1 does, its budgets and milestones |
+| [Architecture](docs/architecture.md) | How the pieces fit and which way dependencies point |
+| [Decision records](docs/adr/README.md) | Why each big choice was made |
+| [Contributing](CONTRIBUTING.md) | Setup, tooling and conventions |
+
+## Privacy
+
+No telemetry. Today Althea makes no network requests at all. The features that will need the
+network, such as update checks, AI and currency rates, are opt-in, and each request they make
+will go to the log.
 
 ## License
 
-[GPL-3.0-or-later](LICENSE).
+[GPL-3.0-or-later](LICENSE): fork it freely; forks you distribute stay open.
