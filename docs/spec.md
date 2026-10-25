@@ -147,7 +147,7 @@ more than 10 % slower than `main`.
 | Hotkey to visible window | < 50 ms p95 |
 | Keystroke to updated results (10 000 items) | < 16 ms p95 |
 | Animations and scrolling | 60 fps, no dropped frames |
-| Idle memory (after warm-up) | < 60 MB working set |
+| Idle memory (after warm-up) | < 60 MB private working set, as Task Manager shows it (measured with MyGo's `internal/idlemem`) |
 | Cold start to ready | < 300 ms |
 | Idle CPU | ~0 % (no timers while hidden) |
 
