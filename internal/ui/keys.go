@@ -33,6 +33,33 @@ func init() {
 	}
 }
 
+// ParseAccelerator reads an accelerator such as "Ctrl+Shift+C" back into modifiers and a key.
+func ParseAccelerator(s string) (ui.Modifiers, ui.Key, bool) {
+	parts := strings.Split(s, "+")
+	var mods ui.Modifiers
+	for _, p := range parts[:len(parts)-1] {
+		switch strings.ToLower(strings.TrimSpace(p)) {
+		case "ctrl":
+			mods |= ui.Ctrl
+		case "alt":
+			mods |= ui.Alt
+		case "shift":
+			mods |= ui.Shift
+		case "super", "win":
+			mods |= ui.Super
+		default:
+			return 0, 0, false
+		}
+	}
+	name := strings.TrimSpace(parts[len(parts)-1])
+	for k, n := range keyNames {
+		if strings.EqualFold(n, name) {
+			return mods, k, true
+		}
+	}
+	return 0, 0, false
+}
+
 // Accelerator spells a key pressed with modifiers as settings and MyGo write it, such as
 // "Ctrl+Shift+K". A key without a modifier, or a modifier alone, is not a hotkey.
 func Accelerator(mods ui.Modifiers, key ui.Key) (string, bool) {

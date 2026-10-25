@@ -5,6 +5,9 @@ search_label = "Search"
 empty = "Type to search"
 hint_toggle = "{hotkey} to show or hide"
 hint_close = "Esc to close"
+no_results = "No results for \"{query}\""
+kind_command = "Command"
+actions = "Actions"
 
 [tray]
 open = "Open Althea"
