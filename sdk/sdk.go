@@ -38,6 +38,8 @@ type Command struct {
 	Subtitle string
 	Icon     Icon
 	Keywords []string
+	// Confirm, when set, is asked before the command runs, as Action.Confirm.
+	Confirm string
 	// Run does the command. Commands that show a view arrive in M3.
 	Run func(ctx Context) error
 }
@@ -77,7 +79,10 @@ type Action struct {
 	// Enter and Ctrl+Enter.
 	Shortcut string
 	Icon     Icon
-	Run      func(ctx Context) error
+	// Confirm, when set, is asked before the action runs, for what cannot be undone, as
+	// "Press Enter again to restart": the action runs on the second press.
+	Confirm string
+	Run     func(ctx Context) error
 }
 
 // Icon is what a row shows beside its title.

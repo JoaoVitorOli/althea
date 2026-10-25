@@ -100,7 +100,7 @@ func (r *Registry) Refresh(ctx context.Context) error {
 func commandItem(c sdk.Command) sdk.Item {
 	return sdk.Item{
 		ID: c.ID, Title: c.Title, Subtitle: c.Subtitle, Icon: c.Icon, Keywords: c.Keywords,
-		Actions: []sdk.Action{{Title: c.Title, Run: c.Run}},
+		Actions: []sdk.Action{{Title: c.Title, Confirm: c.Confirm, Run: c.Run}},
 	}
 }
 

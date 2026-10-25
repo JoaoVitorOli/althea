@@ -42,6 +42,8 @@ type Root struct {
 
 	results  []registry.Result
 	selected int
+	armed    armed  // the action waiting to be confirmed
+	notice   string // shown in the footer, as a confirmation asked
 	list     ui.ListState
 	actions  actionPanel
 }
@@ -82,6 +84,7 @@ func (r *Root) SetResults(query string, results []registry.Result) {
 		return
 	}
 	r.results, r.selected = results, 0
+	r.armed, r.notice = armed{}, ""
 	r.actions.open = false
 	if len(results) > 0 {
 		r.list.ScrollIntoView(0)
@@ -184,15 +187,29 @@ func (r *Root) keys(c *ui.Context) {
 }
 
 func (r *Root) choose(i int) {
+	r.armed, r.notice = armed{}, ""
 	r.selected = max(0, min(i, len(r.results)-1))
 	r.list.ScrollIntoView(r.selected)
 }
 
 func (r *Root) run(res registry.Result, action int) {
 	r.actions.open = false
-	if r.OnRun != nil && action < len(res.Item.Actions) {
-		r.OnRun(res, action)
+	if r.OnRun == nil || action >= len(res.Item.Actions) {
+		return
 	}
+	arm := armed{key: res.Key, action: action}
+	if msg := res.Item.Actions[action].Confirm; msg != "" && r.armed != arm {
+		r.armed, r.notice = arm, msg
+		return
+	}
+	r.armed, r.notice = armed{}, ""
+	r.OnRun(res, action)
+}
+
+// armed is an action asking for confirmation, waiting for its second press.
+type armed struct {
+	key    string
+	action int
 }
 
 func (r *Root) resultList(c *ui.Context) {
@@ -293,6 +310,10 @@ func (r *Root) footer(c *ui.Context) {
 				ui.Text(c, r.T("launcher.hint_toggle", "hotkey", r.Hotkey)).FontSize(small).TextColor(t.TextMuted)
 			}
 			ui.Text(c, r.T("launcher.hint_close")).FontSize(small).TextColor(t.TextMuted)
+			return
+		}
+		if r.notice != "" {
+			ui.Text(c, r.notice).FontSize(small).FontWeight(600).TextColor(t.Warning)
 			return
 		}
 		res := r.results[r.selected]

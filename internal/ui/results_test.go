@@ -167,3 +167,32 @@ func TestHighlight(t *testing.T) {
 		t.Error("matched letters are not in the accent color")
 	}
 }
+
+func TestActionsThatConfirmRunOnTheSecondPress(t *testing.T) {
+	r, tt, _, runs := searching(t)
+	_ = tt.Click("Search")
+	tt.Type("re")
+	r.SetResults("re", []registry.Result{
+		{Key: "s/restart", Item: sdk.Item{Title: "Restart", Actions: []sdk.Action{{Title: "Restart", Confirm: "Press Enter again to restart"}}}},
+		{Key: "s/lock", Item: sdk.Item{Title: "Lock Screen", Actions: []sdk.Action{{Title: "Lock"}}}},
+	})
+	tt.Frame()
+
+	tt.Key(0, ui.KeyEnter)
+	if len(*runs) != 0 || !tt.HasText("Press Enter again to restart") {
+		t.Fatalf("first Enter ran %v; texts %q", *runs, tt.Texts())
+	}
+	tt.Key(0, ui.KeyEnter)
+	if want := []ran{{"s/restart", 0}}; !slices.Equal(*runs, want) {
+		t.Errorf("runs = %v, want %v", *runs, want)
+	}
+
+	// Moving away disarms it.
+	tt.Key(0, ui.KeyEnter)
+	tt.Key(0, ui.KeyDown)
+	tt.Key(0, ui.KeyUp)
+	tt.Key(0, ui.KeyEnter)
+	if len(*runs) != 1 {
+		t.Errorf("runs = %v, want the confirmation asked again after moving", *runs)
+	}
+}
