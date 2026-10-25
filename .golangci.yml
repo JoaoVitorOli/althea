@@ -71,6 +71,7 @@ linters:
           files:
             - "**/internal/config/**"
             - "**/internal/fswatch/**"
+            - "**/internal/frecency/**"
             - "**/internal/i18n/**"
             - "**/internal/logging/**"
             - "**/internal/netpolicy/**"
