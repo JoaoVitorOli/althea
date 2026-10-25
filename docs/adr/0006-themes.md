@@ -4,9 +4,11 @@ Status: accepted (2026-10-25)
 
 ## Decision
 
-A theme sets colors (light and dark), material (acrylic, mica, glass, solid; blur, opacity, tint),
-radii, spacing, density, fonts and a motion scale. Themes can `extends` another theme. Files are
-hot-reloaded; a visual editor writes them in M7. Layout is not themeable.
+A theme has one appearance (`light` or `dark`) and sets colors, material (acrylic, mica, glass,
+solid; opacity), radii, spacing, font and a motion scale. Themes can `extends` another theme; a
+user's theme with a built-in theme's name shadows it. Settings pick a theme by name, or `system`
+to follow the OS between a light and a dark theme, as other launchers does. Files are hot-reloaded; a
+visual editor writes them in M7. Layout is not themeable.
 
 ## Consequences
 

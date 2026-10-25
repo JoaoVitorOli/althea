@@ -8,11 +8,16 @@ schema = 1
 [general]
 # "system" follows Windows; or "en", "pt-BR".
 language = "system"
-# A theme from the themes folder, by file name without .toml.
-theme = "althea-dark"
 start_at_login = true
 # Checks GitHub for new versions. Nothing else is ever sent (no telemetry).
 check_updates = false
+
+[theme]
+# A theme by file name without .toml, from the themes folder or built in, or "system" to
+# follow Windows between the light and the dark one below.
+name = "system"
+dark = "althea-dark"
+light = "althea-light"
 
 [hotkey]
 # Shows and hides Althea: a combination such as "Alt+Space" or "Ctrl+Shift+Space",

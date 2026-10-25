@@ -75,6 +75,8 @@ linters:
             - "**/internal/secrets/**"
             - "**/internal/store/**"
             - "**/internal/theme/**"
+            - "**/internal/tomlpos/**"
+            - "**/internal/hotkey/**"
           deny:
             - pkg: github.com/egoist/mygo
               desc: core packages stay UI-free so they run and test anywhere (docs/architecture.md)

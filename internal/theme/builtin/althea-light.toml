@@ -1,0 +1,27 @@
+# Althea Light — Althea Dark's shapes and motion in light colors.
+schema = 1
+name = "Althea Light"
+extends = "althea-dark"
+appearance = "light"
+
+[colors]
+background = "#f7f8fbd9"
+surface = "#ffffff"
+surface_hover = "#eef0f6"
+surface_pressed = "#e3e6f0"
+border = "#0000001a"
+text = "#1a1c24"
+text_muted = "#6b7086"
+accent = "#4f5fd8"
+accent_hover = "#4252c8"
+accent_pressed = "#3645b4"
+accent_text = "#ffffff"
+danger = "#c8326c"
+warning = "#a57c12"
+success = "#1f9d6c"
+selection = "#4f5fd840"
+focus = "#4f5fd88c"
+row_selected = "#0000000f"
+
+[material]
+opacity = 0.78

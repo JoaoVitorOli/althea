@@ -34,7 +34,8 @@ func TestLoadMissingFileGivesDefaults(t *testing.T) {
 		t.Errorf("problems = %v, want none", problems)
 	}
 	want := config.Settings{
-		General: config.General{Language: "system", Theme: "althea-dark", StartAtLogin: true},
+		General: config.General{Language: "system", StartAtLogin: true},
+		Theme:   config.Theme{Name: "system", Dark: "althea-dark", Light: "althea-light"},
 		Hotkey:  config.Hotkey{Toggle: "Alt+Space"},
 		Window:  config.Window{ResetAfter: config.Duration(90 * time.Second)},
 	}
@@ -70,7 +71,10 @@ accent = "red"
 func TestLoadReportsInvalidValuesAndKeepsTheirDefaults(t *testing.T) {
 	path := write(t, `[general]
 language = "fr"
-theme = "midnight"
+
+[theme]
+name = "midnight"
+dark = ""
 
 [hotkey]
 toggle = ""
@@ -83,14 +87,15 @@ reset_after = "-5s"
 		t.Fatal(err)
 	}
 	want := config.Defaults()
-	want.General.Theme = "midnight"
+	want.Theme.Name = "midnight"
 	if s != want {
 		t.Errorf("Load = %+v, want %+v", s, want)
 	}
 	wantProblems := []config.Problem{
 		{Line: 2, Key: "general.language", Message: `must be "system", "en" or "pt-BR"`},
-		{Line: 6, Key: "hotkey.toggle", Message: "must not be empty"},
-		{Line: 9, Key: "window.reset_after", Message: "must not be negative"},
+		{Line: 6, Key: "theme.dark", Message: "must not be empty"},
+		{Line: 9, Key: "hotkey.toggle", Message: "must not be empty"},
+		{Line: 12, Key: "window.reset_after", Message: "must not be negative"},
 	}
 	if !slices.Equal(problems, wantProblems) {
 		t.Errorf("problems = %v, want %v", problems, wantProblems)

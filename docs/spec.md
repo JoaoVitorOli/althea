@@ -94,7 +94,9 @@ Each one is an extension in `extensions/` (see [architecture.md](architecture.md
 
 A theme is a TOML file in `%APPDATA%\Althea\themes\`. It can set:
 
-- **Colors** for light and dark: background, surfaces, text, accent, borders, selection, status.
+- **Appearance** (`light` or `dark`) and **colors**: background, surfaces, text, accent, borders,
+  selection, status. Settings choose a theme, or `system` to follow Windows between a light and a
+  dark one.
 - **Material**: `acrylic`, `mica`, `glass` (shader), or `solid`; blur, opacity and tint.
 - **Shape and space**: radii, paddings, row height, density.
 - **Type**: font family and sizes.

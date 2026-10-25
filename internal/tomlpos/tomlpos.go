@@ -1,4 +1,6 @@
-package config
+// Package tomlpos finds where keys are in a TOML document, so problems found after decoding
+// can point at the line to fix.
+package tomlpos
 
 import (
 	"bytes"
@@ -7,9 +9,9 @@ import (
 	"github.com/pelletier/go-toml/v2/unstable"
 )
 
-// keyLines maps each dotted key that a TOML document sets to the line it is on, so problems
-// found after decoding can point at the line to fix. Unparsable input gives what was read.
-func keyLines(data []byte) map[string]int {
+// Lines maps each dotted key that a TOML document sets to the line it is on. Unparsable
+// input gives what was read before the mistake.
+func Lines(data []byte) map[string]int {
 	lines := map[string]int{}
 	var p unstable.Parser
 	p.Reset(data)

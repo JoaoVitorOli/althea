@@ -1,0 +1,44 @@
+# Althea Dark — the theme every other one starts from. It sets every token.
+schema = 1
+name = "Althea Dark"
+appearance = "dark"
+
+[colors]
+background = "#15171fd9"
+surface = "#1e2130"
+surface_hover = "#262a3c"
+surface_pressed = "#2e3247"
+border = "#ffffff14"
+text = "#eef0f8"
+text_muted = "#8f95ad"
+accent = "#7b8cf0"
+accent_hover = "#95a3f4"
+accent_pressed = "#6375e0"
+accent_text = "#15171f"
+danger = "#e05a8e"
+warning = "#e8c35a"
+success = "#5ad1a0"
+selection = "#7b8cf04d"
+focus = "#7b8cf08c"
+row_selected = "#ffffff12"
+
+[material]
+kind = "acrylic"
+opacity = 0.72
+
+[shape]
+window_radius = 14
+row_radius = 8
+control_radius = 6
+
+[space]
+padding = 12
+gap = 6
+row_height = 44
+
+[font]
+family = ""
+size = 14
+
+[motion]
+scale = 1

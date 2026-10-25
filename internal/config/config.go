@@ -15,11 +15,14 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml/v2"
+
+	"github.com/JoaoVitorOli/althea/internal/tomlpos"
 )
 
 // Settings are the host's settings. Extensions' preferences join them in M3.
 type Settings struct {
 	General General `toml:"general"`
+	Theme   Theme   `toml:"theme"`
 	Hotkey  Hotkey  `toml:"hotkey"`
 	Window  Window  `toml:"window"`
 }
@@ -27,12 +30,18 @@ type Settings struct {
 // General holds app-wide settings.
 type General struct {
 	// Language is "system", "en" or "pt-BR".
-	Language string `toml:"language"`
-	// Theme is the name of the theme file, without its extension.
-	Theme        string `toml:"theme"`
+	Language     string `toml:"language"`
 	StartAtLogin bool   `toml:"start_at_login"`
 	// CheckUpdates allows the opt-in update check (docs/adr/0012-privacy.md).
 	CheckUpdates bool `toml:"check_updates"`
+}
+
+// Theme chooses the theme, by the name of its file without .toml.
+type Theme struct {
+	// Name is a theme, or "system" to follow the system between Light and Dark.
+	Name  string `toml:"name"`
+	Dark  string `toml:"dark"`
+	Light string `toml:"light"`
 }
 
 // Hotkey holds the global shortcuts.
@@ -62,7 +71,8 @@ var Languages = []string{"system", "en", "pt-BR"}
 // Defaults returns the settings used where the file sets nothing.
 func Defaults() Settings {
 	return Settings{
-		General: General{Language: "system", Theme: "althea-dark", StartAtLogin: true},
+		General: General{Language: "system", StartAtLogin: true},
+		Theme:   Theme{Name: "system", Dark: "althea-dark", Light: "althea-light"},
 		Hotkey:  Hotkey{Toggle: "Alt+Space"},
 		Window:  Window{ResetAfter: Duration(90 * time.Second)},
 	}
@@ -108,6 +118,7 @@ type file struct {
 	// Schema is the version of the file's format, 1 so far.
 	Schema  int     `toml:"schema"`
 	General General `toml:"general"`
+	Theme   Theme   `toml:"theme"`
 	Hotkey  Hotkey  `toml:"hotkey"`
 	Window  struct {
 		ResetAfter *string `toml:"reset_after"`
@@ -130,7 +141,7 @@ func Load(path string) (s Settings, problems []Problem, err error) {
 
 func parse(data []byte) (Settings, []Problem, error) {
 	defaults := Defaults()
-	f := file{General: defaults.General, Hotkey: defaults.Hotkey}
+	f := file{General: defaults.General, Theme: defaults.Theme, Hotkey: defaults.Hotkey}
 	var problems []Problem
 
 	err := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&f)
@@ -151,24 +162,26 @@ func parse(data []byte) (Settings, []Problem, error) {
 		return Settings{}, nil, fmt.Errorf("settings: %w", err)
 	}
 
-	lines := keyLines(data)
+	lines := tomlpos.Lines(data)
 	invalid := func(key, message string) {
 		problems = append(problems, Problem{Line: lines[key], Key: key, Message: message})
 	}
 
-	s := Settings{General: f.General, Hotkey: f.Hotkey, Window: defaults.Window}
+	s := Settings{General: f.General, Theme: f.Theme, Hotkey: f.Hotkey, Window: defaults.Window}
 	if !slices.Contains(Languages, s.General.Language) {
 		invalid("general.language", `must be "system", "en" or "pt-BR"`)
 		s.General.Language = defaults.General.Language
 	}
-	if strings.TrimSpace(s.General.Theme) == "" {
-		invalid("general.theme", "must not be empty")
-		s.General.Theme = defaults.General.Theme
+	nonEmpty := func(key string, v *string, fallback string) {
+		if strings.TrimSpace(*v) == "" {
+			invalid(key, "must not be empty")
+			*v = fallback
+		}
 	}
-	if strings.TrimSpace(s.Hotkey.Toggle) == "" {
-		invalid("hotkey.toggle", "must not be empty")
-		s.Hotkey.Toggle = defaults.Hotkey.Toggle
-	}
+	nonEmpty("theme.name", &s.Theme.Name, defaults.Theme.Name)
+	nonEmpty("theme.dark", &s.Theme.Dark, defaults.Theme.Dark)
+	nonEmpty("theme.light", &s.Theme.Light, defaults.Theme.Light)
+	nonEmpty("hotkey.toggle", &s.Hotkey.Toggle, defaults.Hotkey.Toggle)
 	if text := f.Window.ResetAfter; text != nil {
 		d, err := time.ParseDuration(*text)
 		switch {
