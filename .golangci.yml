@@ -84,6 +84,8 @@ linters:
     rules:
       - path: _test\.go
         linters: [gosec, noctx, misspell] # tests misspell on purpose
+      - path: _test\.go
+        text: filepathJoin # tests build expected paths from literal Windows paths
 
 formatters:
   enable:
