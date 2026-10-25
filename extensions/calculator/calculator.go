@@ -1,5 +1,5 @@
 // Package calculator is the Calculator extension: math typed into the root search is answered
-// at the top, as other launchers does, and Enter copies the answer.
+// at the top, and Enter copies the answer.
 package calculator
 
 import (

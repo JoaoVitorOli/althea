@@ -1,7 +1,7 @@
 # Althea
 
-A keyboard-first launcher for the desktop, in the spirit of other launchers — with every Pro feature free,
-private by default, and easy to extend.
+A keyboard-first launcher for the desktop — with the features others charge for, free, private by
+default, and easy to extend.
 
 > **Status:** in development towards v1. Windows 11 first, Linux in v1.1.
 

@@ -1,8 +1,8 @@
 # Althea v1 — Product Spec
 
-Althea is a keyboard-first launcher for the desktop, in the spirit of other launchers: one hotkey opens a
-search bar from which you launch apps, run commands and use built-in tools. Everything other launchers
-sells in its Pro plan ships in Althea for free, and anyone can extend it.
+Althea is a keyboard-first launcher for the desktop: one hotkey opens a search bar from which you
+launch apps, run commands and use built-in tools. Features other launchers keep for paid plans
+ship in Althea for free, and anyone can extend it.
 
 This document is the source of truth for **what** v1 is. [architecture.md](architecture.md)
 describes **how** it is built, and [adr/](adr/) records **why** each decision was made.
@@ -72,7 +72,7 @@ Each one is an extension in `extensions/` (see [architecture.md](architecture.md
 | **Emoji & Symbols** | Search by name and keyword in English and Portuguese, skin tones, recent |
 | **Settings** | The settings screen, theme picker, extension list with their preferences and hotkeys |
 
-### Free versions of paid launchers
+### Free versions of paid launcher features
 
 | Extension | v1 scope |
 |---|---|

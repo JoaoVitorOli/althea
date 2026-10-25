@@ -11,5 +11,5 @@ keeps no keystrokes beyond the snippet keyword buffer and pauses in password fie
 
 ## Consequences
 
-- Matches other launchers' behavior without making every user run a global hook.
+- Offers the bare Win key without making every user run a global hook.
 - The hook callback must return fast (Windows drops slow hooks); work is handed to a goroutine.

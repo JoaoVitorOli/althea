@@ -11,7 +11,7 @@ import (
 // What moves in Althea, and what does not.
 //
 // The launcher shows and hides, and the keyboard moves through results, hundreds of times a
-// day: none of that animates, as in other launchers. Motion is kept for feedback the user would
+// day: none of that animates. Motion is kept for feedback the user would
 // otherwise miss (a press, a hover, a toast) and for what is rare (onboarding). MyGo goes to
 // the target at once when the system asks for reduced motion; a theme's motion scale of 0
 // does the same everywhere.
