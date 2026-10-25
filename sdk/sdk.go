@@ -110,4 +110,6 @@ type Context interface {
 	// T translates a key of the extension's Messages into the user's language, filling
 	// {name} placeholders from args given as name, value pairs.
 	T(key string, args ...any) string
+	// Language is the user's language, as "en" or "pt-BR", for formatting.
+	Language() string
 }

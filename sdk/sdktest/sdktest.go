@@ -25,13 +25,14 @@ type Context struct {
 	Hidden  int
 	catalog *i18n.Catalog
 	prefix  string
+	lang    string
 }
 
 // New returns a Context translating into lang with the extension's messages.
 func New(t testing.TB, ext sdk.Extension, lang string) *Context {
 	t.Helper()
 	m := ext.Manifest()
-	c := &Context{Context: context.Background(), catalog: i18n.New(lang), prefix: m.ID + "."}
+	c := &Context{Context: context.Background(), catalog: i18n.New(lang), prefix: m.ID + ".", lang: lang}
 	if m.Messages != nil {
 		if err := c.catalog.Add(m.ID, m.Messages); err != nil {
 			t.Fatal(err)
@@ -75,3 +76,6 @@ func (c *Context) Toast(message string) {
 
 // T translates with the extension's catalogs.
 func (c *Context) T(key string, args ...any) string { return c.catalog.T(c.prefix+key, args...) }
+
+// Language is the language the Context was made with.
+func (c *Context) Language() string { return c.lang }

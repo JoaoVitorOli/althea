@@ -1,0 +1,4 @@
+copy = "Copiar resultado"
+copy_expression = "Copiar expressão"
+copied = "{answer} copiado"
+kind = "Calculadora"
