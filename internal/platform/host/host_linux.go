@@ -2,11 +2,15 @@
 package host
 
 import (
+	"os/exec"
+
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/platform/linux"
 )
 
 // Services returns the Linux services.
 func Services() platform.Services {
-	return platform.Services{Chrome: linux.Chrome{}, Instance: linux.SingleInstance{}, Locale: linux.Locale}
+	return platform.Services{
+		Chrome: linux.Chrome{}, Instance: linux.SingleInstance{}, Locale: linux.Locale, Command: exec.CommandContext,
+	}
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/JoaoVitorOli/althea/extensions"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
+	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/platform"
@@ -41,6 +42,9 @@ func (a *althea) setUpSearch() error {
 	exts := extensions.Builtin(extensions.Platforms{
 		Apps:   appsPlatform(),
 		System: systemPlatform(a.services.System),
+		Scripts: scripts.Platform{
+			Dir: a.paths.Scripts, Command: a.services.Command, Edit: a.services.EditFile,
+		},
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {

@@ -1,0 +1,31 @@
+kind = "Script"
+run = "Executar script"
+run_again = "Executar de novo"
+edit = "Editar script"
+copy_path = "Copiar caminho"
+copy = "Copiar"
+copy_output = "Copiar saída"
+copied = "Copiado"
+confirm = "Pressione Enter de novo para executar {title}"
+done = "{title} terminou"
+no_output = "O script não imprimiu nada"
+argument = "Argumento {n}"
+
+[create]
+title = "Criar Script Command"
+subtitle = "Um script que roda a partir da busca"
+name = "Título"
+name_placeholder = "Reiniciar o Explorer"
+language = "Linguagem"
+mode = "Saída"
+exists = "{file} já está na pasta de scripts"
+
+[folder]
+title = "Abrir pasta de Script Commands"
+
+[mode]
+toast = "Última linha como mensagem"
+silent = "Nada: roda em segundo plano"
+detail = "Toda a saída em uma tela"
+list = "Cada linha como um item para copiar"
+inline = "Primeira linha sob o título"

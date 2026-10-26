@@ -5,14 +5,16 @@ package extensions
 import (
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/calculator"
+	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
 // Platforms are what the built-in extensions need from the system; the host provides them.
 type Platforms struct {
-	Apps   apps.Platform
-	System system.Platform
+	Apps    apps.Platform
+	System  system.Platform
+	Scripts scripts.Platform
 }
 
 // Builtin returns the built-in extensions, in the order their answers show.
@@ -21,5 +23,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		calculator.New(),
 		apps.New(p.Apps),
 		system.New(p.System),
+		scripts.New(p.Scripts),
 	}
 }

@@ -3,7 +3,12 @@
 // the running system, and tests use fakes.
 package platform
 
-import "github.com/JoaoVitorOli/althea/internal/hotkey"
+import (
+	"context"
+	"os/exec"
+
+	"github.com/JoaoVitorOli/althea/internal/hotkey"
+)
 
 // Color is an opaque RGB color, as the system draws window frames.
 type Color struct{ R, G, B uint8 }
@@ -69,4 +74,10 @@ type Services struct {
 	// Vault is nil where Althea cannot keep secrets yet, as on Linux before v1.1: secret
 	// preferences cannot be set there.
 	Vault Vault
+	// Command makes the command that runs a program, as exec.CommandContext, without a console
+	// window where the system would open one.
+	Command func(ctx context.Context, name string, args ...string) *exec.Cmd
+	// EditFile opens a file in an editor, never running it, as opening a script would; nil
+	// where Althea cannot tell.
+	EditFile func(path string) error
 }

@@ -1,0 +1,31 @@
+kind = "Script"
+run = "Run Script"
+run_again = "Run Again"
+edit = "Edit Script"
+copy_path = "Copy Path"
+copy = "Copy"
+copy_output = "Copy Output"
+copied = "Copied"
+confirm = "Press Enter again to run {title}"
+done = "{title} finished"
+no_output = "The script printed nothing"
+argument = "Argument {n}"
+
+[create]
+title = "Create Script Command"
+subtitle = "A script that runs from the search"
+name = "Title"
+name_placeholder = "Restart Explorer"
+language = "Language"
+mode = "Output"
+exists = "{file} is already in the scripts folder"
+
+[folder]
+title = "Open Script Commands Folder"
+
+[mode]
+toast = "Last line as a message"
+silent = "Nothing: run in the background"
+detail = "All output in a view"
+list = "Each line as an item to copy"
+inline = "First line under the title"
