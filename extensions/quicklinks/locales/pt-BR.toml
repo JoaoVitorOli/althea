@@ -1,0 +1,40 @@
+kind = "Quicklink"
+query = "Busca"
+copied = "Link copiado"
+saved = "{name} salvo"
+deleted = "{name} apagado"
+not_saved = "O quicklink não foi salvo"
+alias_taken = "O apelido {alias} já é de {name}"
+
+[create]
+title = "Criar quicklink"
+submit = "Criar"
+
+[edit]
+title = "Editar quicklink"
+submit = "Salvar"
+
+[manage]
+title = "Buscar quicklinks"
+search = "Buscar quicklinks…"
+empty = "Nenhum quicklink ainda"
+empty_hint = "Crie um com Criar quicklink."
+
+[field]
+name = "Nome"
+target = "Link"
+target_info = "Um endereço da web, um arquivo ou uma pasta. {query} pede um texto ao abrir; {clipboard} usa o da área de transferência."
+alias = "Apelido"
+alias_info = "Uma palavra curta que o encontra, como gh."
+icon = "Ícone"
+icon_info = "Um emoji."
+one_line = "Mantenha o link em uma linha."
+no_spaces = "Um apelido é uma palavra só."
+icon_short = "Um emoji basta."
+
+[action]
+open = "Abrir"
+copy = "Copiar link"
+edit = "Editar"
+delete = "Apagar"
+delete_confirm = "Pressione Ctrl+D de novo para apagar"

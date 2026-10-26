@@ -1,0 +1,40 @@
+kind = "Quicklink"
+query = "Query"
+copied = "Link copied"
+saved = "Saved {name}"
+deleted = "Deleted {name}"
+not_saved = "The quicklink was not saved"
+alias_taken = "The alias {alias} is taken by {name}"
+
+[create]
+title = "Create Quicklink"
+submit = "Create"
+
+[edit]
+title = "Edit Quicklink"
+submit = "Save"
+
+[manage]
+title = "Search Quicklinks"
+search = "Search quicklinks…"
+empty = "No quicklinks yet"
+empty_hint = "Create one with Create Quicklink."
+
+[field]
+name = "Name"
+target = "Link"
+target_info = "A web address, a file or a folder. {query} asks for text as it opens; {clipboard} puts in the clipboard's."
+alias = "Alias"
+alias_info = "A short word that finds it, as gh."
+icon = "Icon"
+icon_info = "An emoji."
+one_line = "Keep the link on one line."
+no_spaces = "An alias is one word."
+icon_short = "One emoji is enough."
+
+[action]
+open = "Open"
+copy = "Copy Link"
+edit = "Edit"
+delete = "Delete"
+delete_confirm = "Press Ctrl+D again to delete"
