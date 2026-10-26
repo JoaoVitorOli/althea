@@ -1,0 +1,17 @@
+title = "Buscar arquivos"
+search = "Buscar arquivos pelo nome…"
+empty = "Nenhum arquivo encontrado"
+empty_hint = "A busca cobre as pastas das preferências; arquivos novos aparecem assim que são criados."
+copied = "Copiado"
+
+[action]
+open = "Abrir"
+reveal = "Mostrar na pasta"
+copy_path = "Copiar caminho"
+copy_file = "Copiar arquivo"
+
+[prefs]
+folders = "Pastas"
+folders_info = "As pastas buscadas, separadas por ponto e vírgula. Vazio busca Área de Trabalho, Documentos, Downloads, Imagens, Vídeos e Músicas."
+exclude = "Deixar de fora pastas chamadas"
+exclude_info = "Pastas com estes nomes não são buscadas, onde quer que estejam, separadas por ponto e vírgula."

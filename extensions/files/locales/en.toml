@@ -1,0 +1,17 @@
+title = "Search Files"
+search = "Search files by name…"
+empty = "No files found"
+empty_hint = "File Search covers the folders in its preferences; new files appear as they are made."
+copied = "Copied"
+
+[action]
+open = "Open"
+reveal = "Show in Folder"
+copy_path = "Copy Path"
+copy_file = "Copy File"
+
+[prefs]
+folders = "Folders"
+folders_info = "The folders searched, separated by semicolons. Empty searches Desktop, Documents, Downloads, Pictures, Videos and Music."
+exclude = "Leave out folders named"
+exclude_info = "Folders with these names are not searched, wherever they are, separated by semicolons."

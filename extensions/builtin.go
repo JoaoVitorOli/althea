@@ -6,6 +6,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/calculator"
 	"github.com/JoaoVitorOli/althea/extensions/clipboard"
+	"github.com/JoaoVitorOli/althea/extensions/files"
 	"github.com/JoaoVitorOli/althea/extensions/quicklinks"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
@@ -20,6 +21,7 @@ type Platforms struct {
 	Scripts   scripts.Platform
 	Snippets  snippets.Platform
 	Clipboard clipboard.Platform
+	Files     files.Platform
 }
 
 // Builtin returns the built-in extensions, in the order their answers show.
@@ -32,5 +34,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		quicklinks.New(),
 		snippets.New(p.Snippets),
 		clipboard.New(p.Clipboard),
+		files.New(p.Files),
 	}
 }

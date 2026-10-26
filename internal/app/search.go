@@ -13,6 +13,7 @@ import (
 
 	"github.com/JoaoVitorOli/althea/extensions"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
+	"github.com/JoaoVitorOli/althea/extensions/files"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
@@ -52,6 +53,10 @@ func (a *althea) setUpSearch() error {
 		},
 		Snippets:  a.snippetsPlatform(),
 		Clipboard: a.clipboardPlatform(),
+		Files: files.Platform{
+			Folders: a.services.KnownFolders, Watch: a.services.WatchTree,
+			Reveal: func(path string) error { mygo.Shell.ShowItemInFolder(path); return nil },
+		},
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {

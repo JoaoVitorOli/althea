@@ -103,7 +103,7 @@ type Icon struct {
 	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",
 	// "power", "lock", "moon", "restart", "trash", "settings", "app", "logout", "sun",
-	// "script", "document", "link", "clipboard", "image", "color".
+	// "script", "document", "link", "clipboard", "image", "color", "folder".
 	Glyph string
 }
 
