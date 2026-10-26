@@ -124,4 +124,25 @@ type Context interface {
 	Push(v View)
 	// Pop closes the view on top, back to the one before it or to the root search.
 	Pop()
+	// Storage is the extension's own key-value store, kept across runs.
+	Storage() Storage
+}
+
+// Storage keeps an extension's values by key in Althea's database, apart from every other
+// extension's. Values are bytes: encode them as suits, as JSON.
+type Storage interface {
+	// Get returns the value of key, and whether it is set.
+	Get(ctx context.Context, key string) (value []byte, ok bool, err error)
+	// Set sets the value of key.
+	Set(ctx context.Context, key string, value []byte) error
+	// Delete removes key; removing a key that is not set is not an error.
+	Delete(ctx context.Context, key string) error
+	// List returns the entries whose keys start with prefix, in key order.
+	List(ctx context.Context, prefix string) ([]Entry, error)
+}
+
+// Entry is a key of Storage and its value.
+type Entry struct {
+	Key   string
+	Value []byte
 }

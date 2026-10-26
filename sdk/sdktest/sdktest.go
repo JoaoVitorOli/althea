@@ -6,6 +6,9 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"maps"
+	"slices"
+	"strings"
 	"sync"
 	"testing"
 
@@ -18,13 +21,15 @@ import (
 type Context struct {
 	context.Context
 
-	mu      sync.Mutex
-	Opened  []string
-	Copied  []string
-	Toasts  []string
-	Hidden  int
-	Pushed  []sdk.View
-	Popped  int
+	mu     sync.Mutex
+	Opened []string
+	Copied []string
+	Toasts []string
+	Hidden int
+	Pushed []sdk.View
+	Popped int
+	// Store is what the extension kept in Storage, by key.
+	Store   map[string][]byte
 	catalog *i18n.Catalog
 	prefix  string
 	lang    string
@@ -94,4 +99,45 @@ func (c *Context) Pop() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.Popped++
+}
+
+// Storage keeps values in Store.
+func (c *Context) Storage() sdk.Storage { return storage{c} }
+
+type storage struct{ c *Context }
+
+func (s storage) Get(_ context.Context, key string) ([]byte, bool, error) {
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	v, ok := s.c.Store[key]
+	return slices.Clone(v), ok, nil
+}
+
+func (s storage) Set(_ context.Context, key string, value []byte) error {
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	if s.c.Store == nil {
+		s.c.Store = map[string][]byte{}
+	}
+	s.c.Store[key] = append([]byte{}, value...)
+	return nil
+}
+
+func (s storage) Delete(_ context.Context, key string) error {
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	delete(s.c.Store, key)
+	return nil
+}
+
+func (s storage) List(_ context.Context, prefix string) ([]sdk.Entry, error) {
+	s.c.mu.Lock()
+	defer s.c.mu.Unlock()
+	var out []sdk.Entry
+	for _, k := range slices.Sorted(maps.Keys(s.c.Store)) {
+		if strings.HasPrefix(k, prefix) {
+			out = append(out, sdk.Entry{Key: k, Value: slices.Clone(s.c.Store[k])})
+		}
+	}
+	return out, nil
 }

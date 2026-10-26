@@ -15,6 +15,7 @@ import (
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/registry"
+	"github.com/JoaoVitorOli/althea/internal/store"
 	"github.com/JoaoVitorOli/althea/internal/ui"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
@@ -192,6 +193,35 @@ func (h *hostContext) Push(v sdk.View) {
 }
 
 func (h *hostContext) Pop() { h.a.launcher.Window().Update(h.a.root.Pop) }
+
+func (h *hostContext) Storage() sdk.Storage {
+	return extensionStorage{h.a.db.KV(storageNamespace(h.ext))}
+}
+
+// storageNamespace is the namespace of an extension's Storage, apart from the host's own.
+func storageNamespace(ext string) string { return "extension/" + ext }
+
+// extensionStorage is an extension's Storage in the database.
+type extensionStorage struct{ kv *store.KV }
+
+func (s extensionStorage) Get(ctx context.Context, key string) ([]byte, bool, error) {
+	return s.kv.Get(ctx, key)
+}
+
+func (s extensionStorage) Set(ctx context.Context, key string, value []byte) error {
+	return s.kv.Set(ctx, key, value)
+}
+
+func (s extensionStorage) Delete(ctx context.Context, key string) error { return s.kv.Delete(ctx, key) }
+
+func (s extensionStorage) List(ctx context.Context, prefix string) ([]sdk.Entry, error) {
+	entries, err := s.kv.List(ctx, prefix)
+	out := make([]sdk.Entry, len(entries))
+	for i, e := range entries {
+		out[i] = sdk.Entry(e)
+	}
+	return out, err
+}
 
 // appsPlatform reaches installed apps through MyGo: Win32 and Store apps on Windows.
 func appsPlatform() apps.Platform {
