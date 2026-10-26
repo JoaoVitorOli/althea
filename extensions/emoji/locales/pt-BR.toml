@@ -1,0 +1,32 @@
+title = "Buscar emoji e símbolos"
+search = "Buscar emoji e símbolos…"
+recent = "Usados recentemente"
+copied = "{emoji} copiado"
+
+[group]
+smileys = "Carinhas e emoções"
+people = "Pessoas e corpo"
+nature = "Animais e natureza"
+food = "Comidas e bebidas"
+travel = "Viagens e lugares"
+activities = "Atividades"
+objects = "Objetos"
+symbols = "Símbolos"
+flags = "Bandeiras"
+text = "Símbolos de texto"
+
+[action]
+paste = "Colar"
+copy = "Copiar"
+tones = "Tons de pele"
+
+[prefs]
+tone = "Tom de pele"
+
+[tone]
+none = "Padrão"
+light = "Claro"
+medium_light = "Médio-claro"
+medium = "Médio"
+medium_dark = "Médio-escuro"
+dark = "Escuro"

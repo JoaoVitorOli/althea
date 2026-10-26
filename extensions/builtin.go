@@ -6,6 +6,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/calculator"
 	"github.com/JoaoVitorOli/althea/extensions/clipboard"
+	"github.com/JoaoVitorOli/althea/extensions/emoji"
 	"github.com/JoaoVitorOli/althea/extensions/files"
 	"github.com/JoaoVitorOli/althea/extensions/quicklinks"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
@@ -35,5 +36,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		snippets.New(p.Snippets),
 		clipboard.New(p.Clipboard),
 		files.New(p.Files),
+		emoji.New(),
 	}
 }

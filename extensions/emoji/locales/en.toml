@@ -1,0 +1,32 @@
+title = "Search Emoji & Symbols"
+search = "Search emoji and symbols…"
+recent = "Recently Used"
+copied = "Copied {emoji}"
+
+[group]
+smileys = "Smileys & Emotion"
+people = "People & Body"
+nature = "Animals & Nature"
+food = "Food & Drink"
+travel = "Travel & Places"
+activities = "Activities"
+objects = "Objects"
+symbols = "Symbols"
+flags = "Flags"
+text = "Text Symbols"
+
+[action]
+paste = "Paste"
+copy = "Copy"
+tones = "Skin Tones"
+
+[prefs]
+tone = "Skin tone"
+
+[tone]
+none = "Default"
+light = "Light"
+medium_light = "Medium-light"
+medium = "Medium"
+medium_dark = "Medium-dark"
+dark = "Dark"
