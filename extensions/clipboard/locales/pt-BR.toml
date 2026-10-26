@@ -1,0 +1,50 @@
+title = "Histórico da área de transferência"
+search = "Buscar o que você copiou…"
+empty = "Nada copiado ainda"
+empty_hint = "O que você copiar aparece aqui, guardado criptografado neste computador."
+copied = "Copiado"
+files_more = "{name} e mais {count}"
+
+[kind]
+text = "Texto"
+link = "Link"
+color = "Cor"
+image = "Imagem"
+files = "Arquivos"
+
+[section]
+pinned = "Fixados"
+today = "Hoje"
+yesterday = "Ontem"
+week = "Esta semana"
+earlier = "Antes"
+
+[detail]
+app = "Copiado de"
+copied = "Copiado em"
+size = "Tamanho"
+characters = "{count} caracteres"
+files = "{count} arquivos"
+
+[action]
+paste = "Colar"
+copy = "Copiar"
+plain = "Colar como texto simples"
+pin = "Fixar"
+unpin = "Desafixar"
+delete = "Apagar"
+delete_confirm = "Pressione Ctrl+D de novo para apagar"
+delete_all = "Apagar todos os não fixados"
+delete_all_confirm = "Pressione Ctrl+Shift+D de novo para apagar tudo que não está fixado"
+
+[prefs]
+keep = "Guardar o histórico por"
+keep_day = "Um dia"
+keep_week = "Uma semana"
+keep_month = "Um mês"
+keep_quarter = "Três meses"
+keep_year = "Um ano"
+keep_forever = "Sempre"
+ignore = "Ignorar apps"
+ignore_info = "O que estes apps copiam não é guardado, pelo nome do executável, separados por vírgula, como keepass, 1password. Gerenciadores de senha que marcam o que copiam já são ignorados."
+images = "Guardar imagens"

@@ -56,6 +56,7 @@ func (hostContext) Preferences() sdk.Preferences  { return nil }
 func (hostContext) Database() sdk.Database        { return nil }
 func (hostContext) ClipboardText() string         { return "" }
 func (hostContext) Paste(sdk.Clip) error          { return nil }
+func (hostContext) Copy(sdk.Clip) error           { return nil }
 func (hostContext) Refresh()                      {}
 
 func newRegistry(t *testing.T, exts ...sdk.Extension) *registry.Registry {

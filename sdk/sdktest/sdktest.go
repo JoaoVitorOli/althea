@@ -32,6 +32,8 @@ type Context struct {
 	Hidden int
 	// Refreshed counts the refreshes asked.
 	Refreshed int
+	// Clips are what Copy copied.
+	Clips []sdk.Clip
 	// Pasted are the clips pasted; Clipboard is what ClipboardText returns.
 	Pasted    []sdk.Clip
 	Clipboard string
@@ -126,6 +128,15 @@ func (c *Context) CopyText(text string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.Copied = append(c.Copied, text)
+	return nil
+}
+
+// Copy records the clip, its text among Copied.
+func (c *Context) Copy(clip sdk.Clip) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Clips = append(c.Clips, clip)
+	c.Copied = append(c.Copied, clip.Text)
 	return nil
 }
 

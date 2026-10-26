@@ -103,13 +103,15 @@ type Icon struct {
 	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",
 	// "power", "lock", "moon", "restart", "trash", "settings", "app", "logout", "sun",
-	// "script", "document", "link".
+	// "script", "document", "link", "clipboard", "image", "color".
 	Glyph string
 }
 
 // Clip is what Context.Paste pastes: text, an image or files.
 type Clip struct {
 	Text string
+	// HTML goes with Text, for apps that paste formatting.
+	HTML string
 	// Image is a PNG.
 	Image []byte
 	// Files are paths, pasted as copied files are, as into a folder.
@@ -128,6 +130,8 @@ type Context interface {
 	Open(target string) error
 	// CopyText puts text on the clipboard.
 	CopyText(text string) error
+	// Copy puts a clip on the clipboard: text, an image or files.
+	Copy(c Clip) error
 	// ClipboardText is the text on the clipboard, "" when it holds none.
 	ClipboardText() string
 	// Paste puts a clip on the clipboard and pastes it into the app the user was in before the

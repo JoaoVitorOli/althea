@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"io"
 	"log/slog"
 	"os"
@@ -127,5 +128,21 @@ func TestSettingsListsConfigurableExtensions(t *testing.T) {
 	}
 	if (&settingsExtension{prefs: p}).Commands(ctx) != nil {
 		t.Error("offers the command without configurable extensions")
+	}
+}
+
+func TestVaultKeyIsMadeOnceAndKept(t *testing.T) {
+	v := &memVault{m: map[string]string{}}
+	k1, err := vaultKey(v, "Althea/x/key")
+	if err != nil || len(k1) != 32 {
+		t.Fatalf("key %v, %v", k1, err)
+	}
+	k2, _ := vaultKey(v, "Althea/x/key")
+	if !bytes.Equal(k1, k2) {
+		t.Error("a second call made a new key")
+	}
+	v.m["Althea/x/key"] = "garbage"
+	if _, err := vaultKey(v, "Althea/x/key"); err == nil {
+		t.Error("a damaged key was accepted")
 	}
 }

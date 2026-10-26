@@ -1,0 +1,50 @@
+title = "Clipboard History"
+search = "Search what you copied…"
+empty = "Nothing copied yet"
+empty_hint = "What you copy shows here, kept encrypted on this computer."
+copied = "Copied"
+files_more = "{name} and {count} more"
+
+[kind]
+text = "Text"
+link = "Link"
+color = "Color"
+image = "Image"
+files = "Files"
+
+[section]
+pinned = "Pinned"
+today = "Today"
+yesterday = "Yesterday"
+week = "This Week"
+earlier = "Earlier"
+
+[detail]
+app = "Copied from"
+copied = "Copied at"
+size = "Size"
+characters = "{count} characters"
+files = "{count} files"
+
+[action]
+paste = "Paste"
+copy = "Copy"
+plain = "Paste as Plain Text"
+pin = "Pin"
+unpin = "Unpin"
+delete = "Delete"
+delete_confirm = "Press Ctrl+D again to delete"
+delete_all = "Delete All Unpinned"
+delete_all_confirm = "Press Ctrl+Shift+D again to delete everything not pinned"
+
+[prefs]
+keep = "Keep history for"
+keep_day = "A day"
+keep_week = "A week"
+keep_month = "A month"
+keep_quarter = "Three months"
+keep_year = "A year"
+keep_forever = "Ever"
+ignore = "Ignore apps"
+ignore_info = "What these apps copy is not kept, by executable name, comma-separated, as keepass, 1password. Password managers that mark what they copy are ignored already."
+images = "Keep images"

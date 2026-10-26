@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/transfer"
 
 	"github.com/JoaoVitorOli/althea/extensions"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
@@ -49,7 +50,8 @@ func (a *althea) setUpSearch() error {
 		Scripts: scripts.Platform{
 			Dir: a.paths.Scripts, Command: a.services.Command, Edit: a.services.EditFile,
 		},
-		Snippets: a.snippetsPlatform(),
+		Snippets:  a.snippetsPlatform(),
+		Clipboard: a.clipboardPlatform(),
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {
@@ -290,17 +292,8 @@ func (h *hostContext) Refresh() {
 func (*hostContext) ClipboardText() string { return mygo.Clipboard.ReadText() }
 
 func (h *hostContext) Paste(c sdk.Clip) error {
-	switch {
-	case c.Image != nil:
-		if err := mygo.Clipboard.WriteImage(c.Image); err != nil {
-			return err
-		}
-	case len(c.Files) > 0:
-		if err := mygo.Clipboard.WriteFiles(c.Files...); err != nil {
-			return err
-		}
-	default:
-		mygo.Clipboard.WriteText(c.Text)
+	if err := h.Copy(c); err != nil {
+		return err
 	}
 	paster := h.a.services.Paster
 	if paster == nil {
@@ -313,6 +306,28 @@ func (h *hostContext) Paste(c sdk.Clip) error {
 	})
 	<-hidden
 	return paster.Paste(h.a.pasteTarget.Load(), c.CaretBack)
+}
+
+func (*hostContext) Copy(c sdk.Clip) error {
+	switch {
+	case c.Image != nil:
+		if err := mygo.Clipboard.WriteImage(c.Image); err != nil {
+			return err
+		}
+	case len(c.Files) > 0:
+		if err := mygo.Clipboard.WriteFiles(c.Files...); err != nil {
+			return err
+		}
+	case c.HTML != "":
+		data := transfer.New(transfer.NewItem(
+			transfer.Bytes(transfer.Text, []byte(c.Text)), transfer.Bytes(transfer.HTML, []byte(c.HTML))))
+		if err := mygo.Clipboard.Write(data, mygo.ClipboardOptions{}); err != nil {
+			return err
+		}
+	default:
+		mygo.Clipboard.WriteText(c.Text)
+	}
+	return nil
 }
 
 func (h *hostContext) Hide() { h.a.launcher.Window().Update(h.a.launcher.Hide) }
