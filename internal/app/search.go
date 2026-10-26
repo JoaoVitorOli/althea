@@ -51,6 +51,7 @@ func (a *althea) setUpSearch() error {
 			return err
 		}
 	}
+	exts = a.migrate(exts)
 	settings := a.setUpPreferences(exts)
 	if err := a.addMessages(settings.Manifest()); err != nil {
 		return err
@@ -74,6 +75,23 @@ func (a *althea) setUpSearch() error {
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	go s.refresh()
 	return nil
+}
+
+// migrate applies the extensions' migrations, and leaves out an extension whose tables cannot
+// be brought up to date: it would fail on every call.
+func (a *althea) migrate(exts []sdk.Extension) []sdk.Extension {
+	kept := exts[:0]
+	for _, e := range exts {
+		m := e.Manifest()
+		if m.Migrations != nil {
+			if err := a.db.Migrate(context.Background(), m.ID, m.Migrations); err != nil {
+				a.log.Error("extension left out: its migrations failed", "extension", m.ID, "err", err)
+				continue
+			}
+		}
+		kept = append(kept, e)
+	}
+	return kept
 }
 
 func (a *althea) addMessages(m sdk.Manifest) error {
@@ -265,6 +283,15 @@ func (h *hostContext) Preferences() sdk.Preferences {
 		return prefs.Preferences{}
 	}
 	return h.a.prefs.of(h.ext)
+}
+
+func (h *hostContext) Database() sdk.Database { return extensionDB{h.a.db} }
+
+// extensionDB is the database as extensions see it.
+type extensionDB struct{ *store.DB }
+
+func (d extensionDB) Tx(ctx context.Context, fn func(tx sdk.Queryer) error) error {
+	return d.DB.Tx(ctx, func(tx *store.Tx) error { return fn(tx) })
 }
 
 func (h *hostContext) Storage() sdk.Storage {

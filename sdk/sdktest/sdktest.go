@@ -5,8 +5,10 @@ package sdktest
 import (
 	"context"
 	"io"
+	"io/fs"
 	"log/slog"
 	"maps"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -14,6 +16,7 @@ import (
 
 	"github.com/JoaoVitorOli/althea/internal/i18n"
 	"github.com/JoaoVitorOli/althea/internal/prefs"
+	"github.com/JoaoVitorOli/althea/internal/store"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
@@ -39,13 +42,21 @@ type Context struct {
 	catalog *i18n.Catalog
 	prefix  string
 	lang    string
+
+	t          testing.TB
+	migrations fs.FS
+	dbOnce     sync.Once
+	db         sdk.Database
 }
 
 // New returns a Context translating into lang with the extension's messages.
 func New(t testing.TB, ext sdk.Extension, lang string) *Context {
 	t.Helper()
 	m := ext.Manifest()
-	c := &Context{Context: context.Background(), catalog: i18n.New(lang), prefix: m.ID + ".", lang: lang}
+	c := &Context{
+		Context: context.Background(), catalog: i18n.New(lang), prefix: m.ID + ".", lang: lang,
+		t: t, migrations: m.Migrations,
+	}
 	if m.Messages != nil {
 		if err := c.catalog.Add(m.ID, m.Messages); err != nil {
 			t.Fatal(err)
@@ -57,6 +68,31 @@ func New(t testing.TB, ext sdk.Extension, lang string) *Context {
 		maps.Copy(c.Prefs, values)
 	}
 	return c
+}
+
+// Database is a real database in a temporary folder, opened on first use with the extension's
+// migrations applied, and closed when the test ends.
+func (c *Context) Database() sdk.Database {
+	c.dbOnce.Do(func() {
+		db, err := store.Open(context.Background(), filepath.Join(c.t.TempDir(), "althea.db"))
+		if err != nil {
+			c.t.Fatal(err)
+		}
+		c.t.Cleanup(func() { _ = db.Close() })
+		if c.migrations != nil {
+			if err := db.Migrate(context.Background(), strings.TrimSuffix(c.prefix, "."), c.migrations); err != nil {
+				c.t.Fatal(err)
+			}
+		}
+		c.db = database{db}
+	})
+	return c.db
+}
+
+type database struct{ *store.DB }
+
+func (d database) Tx(ctx context.Context, fn func(tx sdk.Queryer) error) error {
+	return d.DB.Tx(ctx, func(tx *store.Tx) error { return fn(tx) })
 }
 
 // Preferences reads Prefs and Secrets.

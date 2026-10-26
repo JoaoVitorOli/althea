@@ -27,6 +27,9 @@ type Manifest struct {
 	Icon  Icon
 	// Messages are the extension's catalogs, en.toml and pt-BR.toml, for Context.T.
 	Messages fs.FS
+	// Migrations create and change the extension's tables in Database: SQL files named as
+	// 0001_create_items.sql, each applied once, in order, before the extension is first called.
+	Migrations fs.FS
 }
 
 // Command is something the user runs from the root search.
@@ -126,6 +129,8 @@ type Context interface {
 	Pop()
 	// Storage is the extension's own key-value store, kept across runs.
 	Storage() Storage
+	// Database is the database of the extension's tables, for more than Storage holds.
+	Database() Database
 	// Preferences are the values the user set for the extension's Preferences.
 	Preferences() Preferences
 }

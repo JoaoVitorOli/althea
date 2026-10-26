@@ -82,8 +82,48 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *sql.Row 
 	return db.sql.QueryRowContext(ctx, query, args...)
 }
 
-// Queries returns how many statements the database has run through Exec, Query, QueryRow and
-// the key-value stores. Tests compare it before and after an operation to catch N+1 access.
+// Tx runs fn in a transaction, committed when fn returns nil and rolled back otherwise.
+func (db *DB) Tx(ctx context.Context, fn func(tx *Tx) error) error {
+	t, err := db.sql.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin: %w", err)
+	}
+	defer func() { _ = t.Rollback() }()
+	if err := fn(&Tx{tx: t, db: db}); err != nil {
+		return err
+	}
+	if err := t.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+	return nil
+}
+
+// Tx is a transaction; its statements count among the database's queries.
+type Tx struct {
+	tx *sql.Tx
+	db *DB
+}
+
+// Exec runs a statement that returns no rows.
+func (t *Tx) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	t.db.queries.Add(1)
+	return t.tx.ExecContext(ctx, query, args...)
+}
+
+// Query runs a query that returns rows.
+func (t *Tx) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	t.db.queries.Add(1)
+	return t.tx.QueryContext(ctx, query, args...)
+}
+
+// QueryRow runs a query that returns at most one row.
+func (t *Tx) QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
+	t.db.queries.Add(1)
+	return t.tx.QueryRowContext(ctx, query, args...)
+}
+
+// Queries returns how many statements the database has run through Exec, Query, QueryRow,
+// transactions and the key-value stores. Tests compare it before and after an operation to catch N+1 access.
 func (db *DB) Queries() int64 { return db.queries.Load() }
 
 // KV returns the key-value store of a namespace, such as an extension's ID.

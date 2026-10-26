@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -110,5 +111,47 @@ func TestKVListTreatsPrefixLiterally(t *testing.T) {
 	}
 	if len(entries) != 1 || entries[0].Key != "100%_done" {
 		t.Errorf("List(\"100%%_\") = %v, want only 100%%_done", entries)
+	}
+}
+
+func TestTxCommitsOrRollsBack(t *testing.T) {
+	ctx := context.Background()
+	db := open(t, filepath.Join(t.TempDir(), "althea.db"))
+	if _, err := db.Exec(ctx, `CREATE TABLE t (v TEXT)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Tx(ctx, func(tx *store.Tx) error {
+		_, err := tx.Exec(ctx, `INSERT INTO t VALUES ('kept')`)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	failed := db.Tx(ctx, func(tx *store.Tx) error {
+		if _, err := tx.Exec(ctx, `INSERT INTO t VALUES ('dropped')`); err != nil {
+			return err
+		}
+		return errors.New("changed my mind")
+	})
+	if failed == nil {
+		t.Fatal("the failing transaction reported success")
+	}
+	var n int
+	if err := db.QueryRow(ctx, `SELECT count(*) FROM t`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("rows = %d, %v; want the committed one alone", n, err)
+	}
+}
+
+func TestFullTextSearchIsAvailable(t *testing.T) {
+	ctx := context.Background()
+	db := open(t, filepath.Join(t.TempDir(), "althea.db"))
+	if _, err := db.Exec(ctx, `CREATE VIRTUAL TABLE docs USING fts5(body, tokenize = 'unicode61 remove_diacritics 2')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(ctx, `INSERT INTO docs VALUES ('Reunião às três'), ('lunch at noon')`); err != nil {
+		t.Fatal(err)
+	}
+	var body string
+	if err := db.QueryRow(ctx, `SELECT body FROM docs WHERE docs MATCH 'reuniao'`).Scan(&body); err != nil || body != "Reunião às três" {
+		t.Errorf("match = %q, %v", body, err)
 	}
 }
