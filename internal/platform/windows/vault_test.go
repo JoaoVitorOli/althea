@@ -61,3 +61,10 @@ func TestTypedTextOfALetter(t *testing.T) {
 		t.Errorf("Left types %q", got)
 	}
 }
+
+func TestWndClassLayout(t *testing.T) {
+	// WNDCLASSEXW on 64-bit Windows: 80 bytes.
+	if s := unsafe.Sizeof(wndclassex{}); s != 80 {
+		t.Errorf("size %d", s)
+	}
+}

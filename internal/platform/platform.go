@@ -79,6 +79,22 @@ type Typist interface {
 	InPassword() bool
 }
 
+// ClipboardWatcher tells when the clipboard changes, for clipboard history.
+type ClipboardWatcher interface {
+	// Watch calls changed, on a thread of its own, each time the clipboard's content changes,
+	// until stop is called.
+	Watch(changed func(ClipboardChange)) (stop func(), err error)
+}
+
+// ClipboardChange is what is known of new clipboard content before reading it.
+type ClipboardChange struct {
+	// Private is set when the app that copied asked clipboard managers not to keep it, as
+	// password managers do.
+	Private bool
+	// Source is the executable name of the app that copied, as "chrome.exe", or "".
+	Source string
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Instance SingleInstance
@@ -102,4 +118,6 @@ type Services struct {
 	Paster Paster
 	// Typist is nil where Althea cannot type into other apps, as on Linux; it needs KeyHook.
 	Typist Typist
+	// Clipboard is nil where Althea cannot watch the clipboard yet, as on Linux.
+	Clipboard ClipboardWatcher
 }
