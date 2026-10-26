@@ -45,6 +45,9 @@ func (r *Root) detail(c *ui.Context, d *sdk.Detail, md *markdown.Options) {
 		md.Theme = &markdown.Theme{FontSize: r.theme.Font.Size}
 	}
 	ui.Column(c).Gap(14).Children(func() {
+		if b := r.Icons.Data(d.Image); b != nil {
+			ui.Image(c, b).Height(220).Fit(ui.Contain).Radius(r.theme.Shape.RowRadius).AlignSelf(ui.Start)
+		}
 		if d.Markdown != "" {
 			markdown.View(c, d.Markdown, md)
 		}

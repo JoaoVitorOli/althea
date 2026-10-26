@@ -50,7 +50,9 @@ type Empty struct {
 
 // Detail shows a document: Markdown, with labeled values beside it.
 type Detail struct {
-	Title    string
+	Title string
+	// Image is shown above the Markdown, as large as fits: a PNG held in memory.
+	Image    []byte
 	Markdown string
 	Metadata []Metadata
 	// Actions are what the user can do from the view, as an Item's: the first on Enter.

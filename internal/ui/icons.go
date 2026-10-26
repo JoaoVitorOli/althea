@@ -1,10 +1,17 @@
 package ui
 
 import (
+	"bytes"
+	"hash/fnv"
+	"image"
+	_ "image/jpeg" // clipboard images and files may be JPEGs
+	_ "image/png"
 	"os"
+	"strconv"
 	"sync"
 
 	"github.com/egoist/mygo/ui"
+	"golang.org/x/image/draw"
 
 	"github.com/JoaoVitorOli/althea/sdk"
 )
@@ -47,6 +54,52 @@ type Icons struct {
 	mu      sync.Mutex
 	bitmaps map[string]*ui.Bitmap // nil where the file has none
 	pending map[string]bool
+	// held are the keys of the images held in memory, oldest first: few are kept, as each
+	// may be a screenshot.
+	held []string
+}
+
+// Images in memory are kept at most this many, scaled down to fit maxHeldSide pixels.
+const (
+	maxHeld     = 8
+	maxHeldSide = 768
+)
+
+// Data returns the image of a PNG held in memory, or nil while it decodes or when it is not one.
+func (ic *Icons) Data(data []byte) *ui.Bitmap {
+	if ic == nil || len(data) == 0 {
+		return nil
+	}
+	h := fnv.New64a()
+	_, _ = h.Write(data)
+	key := "data:" + strconv.FormatUint(h.Sum64(), 36) + ":" + strconv.Itoa(len(data))
+	ic.mu.Lock()
+	_, known := ic.bitmaps[key]
+	if !known && !ic.pending[key] {
+		ic.held = append(ic.held, key)
+		for len(ic.held) > maxHeld {
+			delete(ic.bitmaps, ic.held[0])
+			ic.held = ic.held[1:]
+		}
+	}
+	ic.mu.Unlock()
+	return ic.decode(key, func() (*ui.Bitmap, error) { return decodeScaled(data, maxHeldSide) })
+}
+
+// decodeScaled decodes an image, scaled down to fit side pixels.
+func decodeScaled(data []byte, side int) (*ui.Bitmap, error) {
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	b := img.Bounds()
+	if b.Dx() <= side && b.Dy() <= side {
+		return ui.NewBitmap(img), nil
+	}
+	scale := float64(side) / float64(max(b.Dx(), b.Dy()))
+	dst := image.NewRGBA(image.Rect(0, 0, max(1, int(float64(b.Dx())*scale)), max(1, int(float64(b.Dy())*scale))))
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), img, b, draw.Src, nil)
+	return ui.NewBitmap(dst), nil
 }
 
 // File returns the icon of path, or nil while it loads or where there is none.
@@ -67,6 +120,17 @@ func (ic *Icons) Image(path string) *ui.Bitmap {
 
 // get returns the bitmap of key, loading it with load the first time.
 func (ic *Icons) get(key string, load func() ([]byte, error)) *ui.Bitmap {
+	return ic.decode(key, func() (*ui.Bitmap, error) {
+		data, err := load()
+		if err != nil {
+			return nil, err
+		}
+		return ui.DecodeBitmap(data)
+	})
+}
+
+// decode returns the bitmap of key, made by build on a goroutine the first time.
+func (ic *Icons) decode(key string, build func() (*ui.Bitmap, error)) *ui.Bitmap {
 	ic.mu.Lock()
 	defer ic.mu.Unlock()
 	if b, ok := ic.bitmaps[key]; ok {
@@ -80,10 +144,7 @@ func (ic *Icons) get(key string, load func() ([]byte, error)) *ui.Bitmap {
 	}
 	ic.pending[key] = true
 	go func() {
-		var bitmap *ui.Bitmap
-		if data, err := load(); err == nil {
-			bitmap, _ = ui.DecodeBitmap(data)
-		}
+		bitmap, _ := build()
 		ic.mu.Lock()
 		ic.bitmaps[key] = bitmap
 		delete(ic.pending, key)
@@ -100,6 +161,10 @@ func (ic *Icons) get(key string, load func() ([]byte, error)) *ui.Bitmap {
 func (r *Root) icon(c *ui.Context, icon sdk.Icon, size float32, color ui.Color) {
 	if b := r.Icons.File(icon.File, int(size*2)); b != nil {
 		ui.Image(c, b).Size(size, size)
+		return
+	}
+	if b := r.Icons.Data(icon.Data); b != nil {
+		ui.Image(c, b).Size(size, size).Fit(ui.Contain).Radius(size / 8)
 		return
 	}
 	if b := r.Icons.Image(icon.Image); b != nil {

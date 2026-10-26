@@ -97,6 +97,8 @@ type Icon struct {
 	File string
 	// Image shows an image file (PNG, JPEG, GIF, WebP or BMP) as it is.
 	Image string
+	// Data shows an image held in memory, as a PNG, for one that must not be written to a file.
+	Data []byte
 	// Text shows a short text as the icon, as an emoji.
 	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",

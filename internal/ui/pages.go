@@ -284,7 +284,7 @@ func (b *pageBase) update(fn func()) { b.r.Host.Update(fn) }
 func (r *Root) emptyState(c *ui.Context, e sdk.Empty) {
 	t := c.Theme()
 	ui.Column(c).Fill().Center().Gap(6).Children(func() {
-		if e.Icon != (sdk.Icon{}) {
+		if e.Icon.Glyph != "" || e.Icon.Text != "" || e.Icon.File != "" || e.Icon.Image != "" || e.Icon.Data != nil {
 			r.icon(c, e.Icon, 36, t.TextMuted)
 		}
 		ui.Text(c, e.Title).FontWeight(600).TextColor(t.Text)
