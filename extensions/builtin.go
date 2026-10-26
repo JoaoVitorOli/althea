@@ -7,6 +7,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/calculator"
 	"github.com/JoaoVitorOli/althea/extensions/quicklinks"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
+	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
@@ -26,5 +27,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		system.New(p.System),
 		scripts.New(p.Scripts),
 		quicklinks.New(),
+		snippets.New(),
 	}
 }

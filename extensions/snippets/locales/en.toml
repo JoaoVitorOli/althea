@@ -1,0 +1,38 @@
+copied = "Copied"
+saved = "Saved {name}"
+not_saved = "The snippet was not saved"
+keyword_taken = "The keyword clashes with {keyword}, of {name}: one would expand before the other is typed"
+
+[search]
+title = "Search Snippets"
+placeholder = "Search snippets…"
+empty = "No snippets yet"
+empty_hint = "Create one with Ctrl+N or Create Snippet."
+
+[create]
+title = "Create Snippet"
+submit = "Create"
+
+[edit]
+title = "Edit Snippet"
+submit = "Save"
+
+[field]
+name = "Name"
+name_placeholder = "Email signature"
+text = "Text"
+text_info = "{clipboard}, {date}, {time} and {datetime} fill in as it pastes; the caret ends at {cursor}."
+keyword = "Keyword"
+keyword_info = "Typed anywhere, it is replaced by the snippet, once expansion is on."
+no_spaces = "A keyword is one word."
+
+[detail]
+keyword = "Keyword"
+characters = "Characters"
+
+[action]
+paste = "Paste"
+copy = "Copy"
+edit = "Edit"
+delete = "Delete"
+delete_confirm = "Press Ctrl+D again to delete"

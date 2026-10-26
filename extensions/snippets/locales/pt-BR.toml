@@ -1,0 +1,38 @@
+copied = "Copiado"
+saved = "{name} salvo"
+not_saved = "O snippet não foi salvo"
+keyword_taken = "A palavra-chave conflita com {keyword}, de {name}: uma expandiria antes de a outra ser digitada"
+
+[search]
+title = "Buscar snippets"
+placeholder = "Buscar snippets…"
+empty = "Nenhum snippet ainda"
+empty_hint = "Crie um com Ctrl+N ou Criar snippet."
+
+[create]
+title = "Criar snippet"
+submit = "Criar"
+
+[edit]
+title = "Editar snippet"
+submit = "Salvar"
+
+[field]
+name = "Nome"
+name_placeholder = "Assinatura de e-mail"
+text = "Texto"
+text_info = "{clipboard}, {date}, {time} e {datetime} são preenchidos ao colar; o cursor termina em {cursor}."
+keyword = "Palavra-chave"
+keyword_info = "Digitada em qualquer lugar, vira o snippet, quando a expansão está ligada."
+no_spaces = "Uma palavra-chave é uma palavra só."
+
+[detail]
+keyword = "Palavra-chave"
+characters = "Caracteres"
+
+[action]
+paste = "Colar"
+copy = "Copiar"
+edit = "Editar"
+delete = "Apagar"
+delete_confirm = "Pressione Ctrl+D de novo para apagar"
