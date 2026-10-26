@@ -36,3 +36,7 @@ copy = "Copy"
 edit = "Edit"
 delete = "Delete"
 delete_confirm = "Press Ctrl+D again to delete"
+
+[prefs]
+expand = "Expand keywords as you type"
+expand_info = "Typing a snippet's keyword in any app replaces it with the snippet. Paused in password fields Windows can recognize."

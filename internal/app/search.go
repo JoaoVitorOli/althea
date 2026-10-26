@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
+	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/platform"
@@ -48,6 +49,7 @@ func (a *althea) setUpSearch() error {
 		Scripts: scripts.Platform{
 			Dir: a.paths.Scripts, Command: a.services.Command, Edit: a.services.EditFile,
 		},
+		Snippets: a.snippetsPlatform(),
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {
@@ -374,6 +376,16 @@ func (s extensionStorage) List(ctx context.Context, prefix string) ([]sdk.Entry,
 		out[i] = sdk.Entry(e)
 	}
 	return out, err
+}
+
+// snippetsPlatform offers keyword expansion where the system lets Althea watch the keyboard
+// and type.
+func (a *althea) snippetsPlatform() snippets.Platform {
+	t := a.services.Typist
+	if t == nil || a.services.KeyHook == nil {
+		return snippets.Platform{}
+	}
+	return snippets.Platform{Keys: a.keys.typing, Type: t.Type, InPassword: t.InPassword}
 }
 
 // appsPlatform reaches installed apps through MyGo: Win32 and Store apps on Windows.

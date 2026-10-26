@@ -11,7 +11,7 @@ import (
 )
 
 func newExt() *snippets.Extension {
-	e := snippets.New()
+	e := snippets.New(snippets.Platform{})
 	e.Now = func() time.Time { return time.Date(2026, 10, 26, 14, 5, 0, 0, time.UTC) }
 	return e
 }

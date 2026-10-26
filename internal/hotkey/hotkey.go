@@ -24,6 +24,9 @@ type KeyEvent struct {
 	Down bool
 	// Injected events were sent by software, as Althea's own masking key.
 	Injected bool
+	// Text is what the key types as it goes down, in the keyboard layout of the app the user
+	// is in: "" for keys that type nothing, as arrows, and with Ctrl or Alt alone.
+	Text string
 }
 
 // WinTap detects the Win key pressed and released with no other key held or pressed meanwhile.

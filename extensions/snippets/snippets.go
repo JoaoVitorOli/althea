@@ -23,12 +23,14 @@ var locales embed.FS
 
 // Extension is the Snippets extension.
 type Extension struct {
+	p Platform
 	// Now is the clock, for {date} and {time}.
 	Now func() time.Time
 }
 
-// New returns the Snippets extension.
-func New() *Extension { return &Extension{Now: time.Now} }
+// New returns the Snippets extension; p offers keyword expansion where the host can watch the
+// keyboard.
+func New(p Platform) *Extension { return &Extension{p: p, Now: time.Now} }
 
 // Manifest implements sdk.Extension.
 func (*Extension) Manifest() sdk.Manifest {

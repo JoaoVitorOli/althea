@@ -12,5 +12,6 @@ func Services() platform.Services {
 		Chrome: windows.Chrome{}, KeyHook: windows.KeyHook{}, System: windows.System{},
 		Instance: windows.SingleInstance{}, Locale: windows.Locale, Vault: windows.Vault{},
 		Command: windows.Command, EditFile: windows.EditFile, Paster: windows.Paster{},
+		Typist: windows.Typist{},
 	}
 }

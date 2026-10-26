@@ -38,7 +38,7 @@ func Run() (err error) {
 	}
 
 	// One Althea per set of data: a portable copy runs beside an installed one.
-	a := &althea{services: services, started: started}
+	a := &althea{services: services, started: started, keys: &keyboard{hook: services.KeyHook}}
 	first, release, err := services.Instance.Lock(instanceName(p.Data), func() {
 		mygo.RunOnMain(func() {
 			if a.launcher != nil {
@@ -91,8 +91,10 @@ type althea struct {
 	prefsSettings *settingsExtension
 	// background runs the extensions' services.
 	background *services
-	hotkey     string
-	unbind     func()
+	// keys shares the keyboard hook.
+	keys   *keyboard
+	hotkey string
+	unbind func()
 }
 
 func (a *althea) ready() {
@@ -235,15 +237,14 @@ func (a *althea) bindHotkey(shortcut string) {
 // bindWinKey opens the launcher when the Win key is tapped alone, through the keyboard hook,
 // keeping the Start menu closed for those taps. Win with another key still reaches Windows.
 func (a *althea) bindWinKey() (unbind func(), err error) {
-	keys := a.services.KeyHook
-	if keys == nil {
+	if a.services.KeyHook == nil {
 		return nil, errors.New("this system cannot watch the Win key")
 	}
 	var tap hotkey.WinTap // used on the hook's thread alone
-	return keys.Start(func(e hotkey.KeyEvent) {
+	return a.keys.listen(func(e hotkey.KeyEvent) {
 		tapped, mask := tap.Feed(e)
 		if mask {
-			keys.Mask()
+			a.services.KeyHook.Mask()
 		}
 		if tapped {
 			// The hook must return at once: toggle on the main thread, later.

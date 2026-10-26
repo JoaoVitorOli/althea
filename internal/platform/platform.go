@@ -70,6 +70,15 @@ type Paster interface {
 	Paste(window uintptr, back int) error
 }
 
+// Typist types into the app in front, as snippet expansion does.
+type Typist interface {
+	// Type presses Backspace erase times, types text and moves the caret back characters left.
+	Type(erase int, text string, back int) error
+	// InPassword reports whether the keyboard is in a password field, as far as the system
+	// tells.
+	InPassword() bool
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Instance SingleInstance
@@ -91,4 +100,6 @@ type Services struct {
 	EditFile func(path string) error
 	// Paster is nil where Althea cannot paste into other apps yet, as on Linux.
 	Paster Paster
+	// Typist is nil where Althea cannot type into other apps, as on Linux; it needs KeyHook.
+	Typist Typist
 }

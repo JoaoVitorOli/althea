@@ -14,9 +14,10 @@ import (
 
 // Platforms are what the built-in extensions need from the system; the host provides them.
 type Platforms struct {
-	Apps    apps.Platform
-	System  system.Platform
-	Scripts scripts.Platform
+	Apps     apps.Platform
+	System   system.Platform
+	Scripts  scripts.Platform
+	Snippets snippets.Platform
 }
 
 // Builtin returns the built-in extensions, in the order their answers show.
@@ -27,6 +28,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		system.New(p.System),
 		scripts.New(p.Scripts),
 		quicklinks.New(),
-		snippets.New(),
+		snippets.New(p.Snippets),
 	}
 }

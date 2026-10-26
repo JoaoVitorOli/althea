@@ -36,3 +36,7 @@ copy = "Copiar"
 edit = "Editar"
 delete = "Apagar"
 delete_confirm = "Pressione Ctrl+D de novo para apagar"
+
+[prefs]
+expand = "Expandir palavras-chave ao digitar"
+expand_info = "Digitar a palavra-chave de um snippet em qualquer app a troca pelo snippet. Pausa em campos de senha que o Windows reconhece."

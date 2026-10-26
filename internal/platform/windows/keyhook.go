@@ -65,11 +65,15 @@ var (
 func lowLevelKeyboardProc(code int, wParam uintptr, kb *kbdllHookStruct) uintptr {
 	if code == hcAction {
 		if h := handler.Load(); h != nil {
-			(*h)(hotkey.KeyEvent{
+			e := hotkey.KeyEvent{
 				VK:       kb.vkCode,
 				Down:     wParam == wmKeyDown || wParam == wmSysKeyDown,
 				Injected: kb.flags&llkhfInjected != 0,
-			})
+			}
+			if e.Down && !e.Injected {
+				e.Text = typedText(kb.vkCode, kb.scanCode)
+			}
+			(*h)(e)
 		}
 	}
 	r, _, _ := procCallNextHookEx.Call(0, uintptr(code), wParam, uintptr(unsafe.Pointer(kb)))

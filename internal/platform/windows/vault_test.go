@@ -44,3 +44,20 @@ func TestVaultKeepsAndForgetsASecret(t *testing.T) {
 		t.Error("the secret outlived Delete")
 	}
 }
+
+func TestGUIThreadInfoLayout(t *testing.T) {
+	// GUITHREADINFO on 64-bit Windows: 72 bytes.
+	if s := unsafe.Sizeof(guiThreadInfo{}); s != 72 {
+		t.Errorf("size %d", s)
+	}
+}
+
+func TestTypedTextOfALetter(t *testing.T) {
+	// A is a letter in every Latin layout; Caps Lock may make it a capital.
+	if got := typedText(0x41, 0x1E); got != "a" && got != "A" {
+		t.Errorf("A types %q", got)
+	}
+	if got := typedText(0x25, 0x4B); got != "" { // Left
+		t.Errorf("Left types %q", got)
+	}
+}
