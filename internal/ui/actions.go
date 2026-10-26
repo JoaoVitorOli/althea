@@ -7,23 +7,24 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"github.com/JoaoVitorOli/althea/internal/theme"
+	"github.com/JoaoVitorOli/althea/sdk"
 )
 
-// actionPanel lists every action of the chosen result, from Ctrl+K: Up and Down choose,
+// actionPanel lists every action of the chosen item, from Ctrl+K: Up and Down choose,
 // Enter runs, Escape closes. It opens at once, without motion, as it comes from the keyboard.
 type actionPanel struct {
 	open     bool
 	selected int
 }
 
-func (p *actionPanel) keys(c *ui.Context, r *Root) {
-	if len(r.results) == 0 || c.Shortcut(0, ui.KeyEscape) || c.Shortcut(ui.Ctrl, ui.KeyK) {
+// keys moves through n actions.
+func (p *actionPanel) keys(c *ui.Context, n int) {
+	if n == 0 || c.Shortcut(0, ui.KeyEscape) || c.Shortcut(ui.Ctrl, ui.KeyK) {
 		p.open = false
 		return
 	}
-	actions := r.results[r.selected].Item.Actions
 	if c.Shortcut(0, ui.KeyDown) {
-		p.selected = min(p.selected+1, len(actions)-1)
+		p.selected = min(p.selected+1, n-1)
 	}
 	if c.Shortcut(0, ui.KeyUp) {
 		p.selected = max(p.selected-1, 0)
@@ -31,9 +32,9 @@ func (p *actionPanel) keys(c *ui.Context, r *Root) {
 }
 
 // actionPanel floats over the results, above the footer, on glass when the theme asks for it.
-func (r *Root) actionPanel(c *ui.Context) {
+// A click runs the i-th action with run.
+func (r *Root) actionPanel(c *ui.Context, actions []sdk.Action, run func(i int)) {
 	t := c.Theme()
-	actions := r.results[r.selected].Item.Actions
 	panel := ui.Column(c).Absolute().Right(12).Bottom(44).Width(320).Padding(6).Gap(2).
 		Radius(r.theme.Shape.WindowRadius - 2)
 	if r.theme.Material.Kind == theme.Glass {
@@ -51,7 +52,7 @@ func (r *Root) actionPanel(c *ui.Context) {
 				row.Background(color(r.theme.Colors.RowSelected).Alpha(0.5))
 			}
 			if row.Clicked() {
-				r.run(r.results[r.selected], i)
+				run(i)
 			}
 			row.Children(func() {
 				ui.Text(c, a.Title).TextColor(t.Text).Grow(1).SingleLine()

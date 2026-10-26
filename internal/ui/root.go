@@ -9,6 +9,7 @@ import (
 
 	"github.com/JoaoVitorOli/althea/internal/registry"
 	"github.com/JoaoVitorOli/althea/internal/theme"
+	"github.com/JoaoVitorOli/althea/sdk"
 )
 
 //go:embed locales/*.toml
@@ -34,6 +35,8 @@ type Root struct {
 	OnRun func(res registry.Result, action int)
 	// Icons loads the system's icons of files and apps; nil shows glyphs alone.
 	Icons *Icons
+	// Host runs the code of the views extensions push; nil runs none.
+	Host Host
 
 	theme theme.Theme
 	ui    *ui.Theme
@@ -47,6 +50,9 @@ type Root struct {
 	toasts   []string
 	list     ui.ListState
 	actions  actionPanel
+
+	stack  []page // the views extensions pushed, the last on top
+	pushes int    // views pushed so far, which tells a page's elements from the one before
 }
 
 // NewRoot returns the root view drawn with a theme.
@@ -71,6 +77,7 @@ func (r *Root) Query() string { return r.query }
 
 // Reset starts the view over: an empty search, with the keyboard in it.
 func (r *Root) Reset() {
+	r.closeAll()
 	r.query = ""
 	r.actions.open = false
 	r.input.Focus()
@@ -116,7 +123,16 @@ func (r *Root) View(c *ui.Context) {
 	}
 	r.toasts = nil
 
-	r.keys(c)
+	if len(r.stack) > 0 {
+		r.pageKeys(c, r.stack[len(r.stack)-1])
+	} else {
+		r.keys(c)
+	}
+	// The keys may have closed the page: draw what shows now.
+	if len(r.stack) > 0 {
+		r.pageView(c, r.stack[len(r.stack)-1])
+		return
+	}
 
 	pad := r.theme.Space.Padding
 	ui.Box(c).Fill().Children(func() {
@@ -149,7 +165,8 @@ func (r *Root) View(c *ui.Context) {
 			r.footer(c)
 		})
 		if r.actions.open {
-			r.actionPanel(c)
+			res := r.results[r.selected]
+			r.actionPanel(c, res.Item.Actions, func(i int) { r.run(res, i) })
 		}
 	})
 }
@@ -171,7 +188,11 @@ func (r *Root) keys(c *ui.Context) {
 		return
 	}
 	if r.actions.open {
-		r.actions.keys(c, r)
+		n := 0
+		if len(r.results) > 0 {
+			n = len(r.results[r.selected].Item.Actions)
+		}
+		r.actions.keys(c, n)
 		return
 	}
 	if len(r.results) == 0 {
@@ -233,14 +254,25 @@ func (r *Root) resultList(c *ui.Context) {
 	})
 }
 
-// row draws one result: its icon, its title with the matched letters in the accent color, its
-// subtitle and what kind it is.
+// row draws one result.
 func (r *Root) row(c *ui.Context, i int) {
 	res := r.results[i]
+	accessory := res.Item.Accessory
+	if accessory == "" && res.Command {
+		accessory = r.T("launcher.kind_command")
+	}
+	if r.itemRow(c, res.Item, res.Positions, i == r.selected, res.Answer, accessory).Clicked() {
+		r.selected = i
+		r.run(res, 0)
+	}
+}
+
+// itemRow draws an item as a row: its icon, its title with the matched letters in the accent
+// color, its subtitle and its accessory. A large row is an answer's.
+func (r *Root) itemRow(c *ui.Context, it sdk.Item, positions []int, selected, large bool, accessory string) ui.Element {
 	t := c.Theme()
-	selected := i == r.selected
 	height := r.theme.Space.RowHeight
-	if res.Answer {
+	if large {
 		height *= 1.6
 	}
 	row := ui.Row(c).Height(height).Padding(0, 10).Gap(12).AlignItems(ui.Center).Radius(r.theme.Shape.RowRadius)
@@ -250,34 +282,27 @@ func (r *Root) row(c *ui.Context, i int) {
 	case row.Hovered():
 		row.Background(color(r.theme.Colors.RowSelected).Alpha(0.5))
 	}
-	if row.Clicked() {
-		r.selected = i
-		r.run(res, 0)
-	}
 	row.Children(func() {
 		size := float32(24)
-		if res.Answer {
+		if large {
 			size = 30
 		}
-		r.icon(c, res.Item.Icon, size, t.TextMuted)
+		r.icon(c, it.Icon, size, t.TextMuted)
 		ui.Column(c).Grow(1).Gap(1).Children(func() {
 			titleSize := r.theme.Font.Size
-			if res.Answer {
+			if large {
 				titleSize += 8
 			}
-			ui.RichText(c, highlight(res.Item.Title, res.Positions, t.Text, t.Accent)...).FontSize(titleSize).SingleLine()
-			if res.Item.Subtitle != "" {
-				ui.Text(c, res.Item.Subtitle).FontSize(r.theme.Font.Size - 2).TextColor(t.TextMuted).SingleLine()
+			ui.RichText(c, highlight(it.Title, positions, t.Text, t.Accent)...).FontSize(titleSize).SingleLine()
+			if it.Subtitle != "" {
+				ui.Text(c, it.Subtitle).FontSize(r.theme.Font.Size - 2).TextColor(t.TextMuted).SingleLine()
 			}
 		})
-		accessory := res.Item.Accessory
-		if accessory == "" && res.Command {
-			accessory = r.T("launcher.kind_command")
-		}
 		if accessory != "" {
 			ui.Text(c, accessory).FontSize(r.theme.Font.Size - 2).TextColor(t.TextMuted)
 		}
 	})
+	return row
 }
 
 // highlight splits a title into spans, the matched letters in accent.

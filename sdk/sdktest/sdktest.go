@@ -23,6 +23,8 @@ type Context struct {
 	Copied  []string
 	Toasts  []string
 	Hidden  int
+	Pushed  []sdk.View
+	Popped  int
 	catalog *i18n.Catalog
 	prefix  string
 	lang    string
@@ -79,3 +81,17 @@ func (c *Context) T(key string, args ...any) string { return c.catalog.T(c.prefi
 
 // Language is the language the Context was made with.
 func (c *Context) Language() string { return c.lang }
+
+// Push records v.
+func (c *Context) Push(v sdk.View) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Pushed = append(c.Pushed, v)
+}
+
+// Pop counts.
+func (c *Context) Pop() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Popped++
+}

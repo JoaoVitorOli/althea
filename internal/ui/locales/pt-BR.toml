@@ -9,6 +9,14 @@ no_results = "Nada encontrado para \"{query}\""
 kind_command = "Comando"
 actions = "Ações"
 
+
+[view]
+back = "Voltar"
+search_placeholder = "Buscar…"
+empty = "Nada aqui ainda"
+required = "Obrigatório"
+submit = "Enviar"
+
 [tray]
 open = "Abrir o Althea"
 settings = "Configurações…"

@@ -61,6 +61,7 @@ func (a *althea) setUpSearch() error {
 	a.search = s
 	a.root.OnQuery = s.query
 	a.root.OnRun = s.run
+	a.root.Host = viewHost{a}
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	go s.refresh()
 	return nil
@@ -125,6 +126,29 @@ func (s *searcher) run(res registry.Result, action int) {
 	}()
 }
 
+// viewHost runs the code of the views extensions push, as ui.Host.
+type viewHost struct{ a *althea }
+
+func (h viewHost) Go(ext string, fn func(ctx sdk.Context) error) (cancel func()) {
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		defer cancel()
+		ectx := h.a.extensionContext(ctx, ext)
+		defer func() {
+			if p := recover(); p != nil {
+				h.a.log.Error("extension panicked", "extension", ext, "panic", p)
+			}
+		}()
+		if err := fn(ectx); err != nil && ctx.Err() == nil {
+			h.a.log.Warn("view failed", "extension", ext, "err", err)
+			ectx.Toast(err.Error())
+		}
+	}()
+	return cancel
+}
+
+func (h viewHost) Update(fn func()) { h.a.launcher.Window().Update(fn) }
+
 // hostContext is the sdk.Context extensions get.
 type hostContext struct {
 	context.Context
@@ -162,6 +186,12 @@ func (h *hostContext) T(key string, args ...any) string {
 }
 
 func (h *hostContext) Language() string { return h.a.catalog.Language() }
+
+func (h *hostContext) Push(v sdk.View) {
+	h.a.launcher.Window().Update(func() { h.a.root.Push(h.ext, v) })
+}
+
+func (h *hostContext) Pop() { h.a.launcher.Window().Update(h.a.root.Pop) }
 
 // appsPlatform reaches installed apps through MyGo: Win32 and Store apps on Windows.
 func appsPlatform() apps.Platform {

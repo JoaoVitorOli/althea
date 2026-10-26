@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 
@@ -90,4 +91,46 @@ func TestSnapshotResults(t *testing.T) {
 	tt.Key(ui.Ctrl, ui.KeyK)
 	tt.Frame()
 	save(t, tt, "results-actions")
+}
+
+func TestSnapshotViews(t *testing.T) {
+	th, _, _ := theme.Load("althea-dark", "")
+	catalog := i18n.New("pt-BR")
+	_ = catalog.Add("", Messages)
+	r := NewRoot(catalog.T, th)
+	tt := ui.NewTester(r.View, 720, 420)
+	tt.SetScale(2)
+	shot := func(name string, v sdk.View) {
+		r.closeAll()
+		r.Push("test", v)
+		tt.Frame()
+		tt.Advance(time.Second)
+		save(t, tt, "view-"+name)
+	}
+	acts := []sdk.Action{{Title: "Colar"}, {Title: "Copiar"}}
+	shot("list", &sdk.List{Title: "Snippets", Items: []sdk.Item{
+		{ID: "1", Title: "Assinatura de e-mail", Subtitle: "Atenciosamente, João", Section: "Fixados", Icon: sdk.Icon{Glyph: "document"}, Actions: acts},
+		{ID: "2", Title: "Endereço", Section: "Fixados", Icon: sdk.Icon{Glyph: "document"}, Accessory: "end", Actions: acts},
+		{ID: "3", Title: "Data de hoje", Section: "Recentes", Icon: sdk.Icon{Glyph: "document"}, Actions: acts},
+	}})
+	shot("list-detail", &sdk.List{Title: "Clipboard", ShowDetail: true, Items: []sdk.Item{
+		{
+			ID: "1", Title: "func main() {}", Icon: sdk.Icon{Glyph: "document"}, Actions: acts,
+			Detail: &sdk.Detail{Markdown: "```go\nfunc main() {}\n```", Metadata: []sdk.Metadata{{Label: "Aplicativo", Text: "VS Code"}, {Label: "Copiado", Text: "há 2 min"}}},
+		},
+		{ID: "2", Title: "https://go.dev", Icon: sdk.Icon{Glyph: "document"}, Actions: acts},
+	}})
+	var emoji []sdk.Item
+	for _, e := range []string{"😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎"} {
+		emoji = append(emoji, sdk.Item{ID: e, Title: "rosto " + e, Icon: sdk.Icon{Text: e}, Actions: acts})
+	}
+	shot("grid", &sdk.Grid{Title: "Emoji", Items: emoji})
+	shot("detail", &sdk.Detail{Title: "Sobre", Markdown: "# Althea\n\nUm launcher **rápido** e privado.\n\n- Busca\n- Extensões", Metadata: []sdk.Metadata{{Label: "Versão", Text: "1.0.0"}}, Actions: acts})
+	shot("form", &sdk.Form{Title: "Novo snippet", Fields: []sdk.Field{
+		{ID: "name", Title: "Nome", Placeholder: "Assinatura", Required: true},
+		{ID: "text", Title: "Texto", Kind: sdk.TextArea, Info: "Use {clipboard} e {date}."},
+		{ID: "kind", Title: "Tipo", Kind: sdk.Dropdown, Options: []sdk.Option{{Value: "t", Title: "Texto"}, {Value: "c", Title: "Código"}}},
+		{ID: "pin", Title: "Fixar", Kind: sdk.Checkbox, Placeholder: "Mostrar no topo"},
+	}})
+	shot("empty", &sdk.List{Empty: sdk.Empty{Title: "Nenhum snippet", Description: "Crie um com Ctrl+N.", Icon: sdk.Icon{Glyph: "document"}}})
 }

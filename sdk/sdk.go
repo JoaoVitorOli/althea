@@ -2,8 +2,6 @@
 // a fork, is an Extension: it offers commands, items for the root search and direct answers,
 // and acts through the Context the host lends it. The package depends on the standard library
 // alone, so extensions need nothing of Althea's internals. See docs/adr/0003-extensions.md.
-//
-// This is the M2 subset; M3 adds views (List, Grid, Detail, Form), preferences and storage.
 package sdk
 
 import (
@@ -40,7 +38,7 @@ type Command struct {
 	Keywords []string
 	// Confirm, when set, is asked before the command runs, as Action.Confirm.
 	Confirm string
-	// Run does the command. Commands that show a view arrive in M3.
+	// Run does the command; it may show a view with ctx.Push.
 	Run func(ctx Context) error
 }
 
@@ -67,6 +65,11 @@ type Item struct {
 	Keywords []string
 	// Accessory is a short text at the row's end, as "Application" or "Command".
 	Accessory string
+	// Section groups the items of a List or Grid under a heading, in the order sections first
+	// appear. The root search has no sections.
+	Section string
+	// Detail is shown beside the item in a List with ShowDetail.
+	Detail *Detail
 	// Actions are what the user can do with the item: the first runs on Enter, the second on
 	// Ctrl+Enter, all of them from the action panel (Ctrl+K).
 	Actions []Action
@@ -89,8 +92,13 @@ type Action struct {
 type Icon struct {
 	// File shows the icon the system has for a file, folder or application.
 	File string
+	// Image shows an image file (PNG, JPEG, GIF, WebP or BMP) as it is.
+	Image string
+	// Text shows a short text as the icon, as an emoji.
+	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",
-	// "power", "lock", "moon", "restart", "trash", "settings", "app".
+	// "power", "lock", "moon", "restart", "trash", "settings", "app", "logout", "sun",
+	// "script", "document".
 	Glyph string
 }
 
@@ -112,4 +120,8 @@ type Context interface {
 	T(key string, args ...any) string
 	// Language is the user's language, as "en" or "pt-BR", for formatting.
 	Language() string
+	// Push shows a view over the current one; Escape comes back.
+	Push(v View)
+	// Pop closes the view on top, back to the one before it or to the root search.
+	Pop()
 }

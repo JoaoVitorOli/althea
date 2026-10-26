@@ -9,6 +9,14 @@ no_results = "No results for \"{query}\""
 kind_command = "Command"
 actions = "Actions"
 
+
+[view]
+back = "Back"
+search_placeholder = "Search…"
+empty = "Nothing here yet"
+required = "Required"
+submit = "Submit"
+
 [tray]
 open = "Open Althea"
 settings = "Settings…"
