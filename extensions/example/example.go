@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/fs"
 	"slices"
-	"strconv"
 	"time"
 
 	"github.com/JoaoVitorOli/althea/sdk"
@@ -231,7 +230,7 @@ func (e *Extension) addForm(ctx sdk.Context) *sdk.Form {
 		},
 		Submit: func(ctx sdk.Context, v sdk.Values) error {
 			now := e.Now()
-			t := todo{ID: strconv.FormatInt(now.UnixNano(), 36), Title: v["title"], Notes: v["notes"], Added: now}
+			t := todo{ID: sdk.NewID(), Title: v["title"], Notes: v["notes"], Added: now}
 			if err := save(ctx, t); err != nil {
 				return fmt.Errorf("%s: %w", ctx.T("add.not_saved"), err)
 			}
