@@ -350,3 +350,24 @@ func TestResetClosesPages(t *testing.T) {
 		t.Errorf("stack %d; texts %q", len(r.stack), tt.Texts())
 	}
 }
+
+func TestGridArrowsFollowTheColumnsThatFit(t *testing.T) {
+	r, tt, _ := pushing(t)
+	var items []sdk.Item
+	for i := range 40 {
+		title := "item " + string(rune('A'+i/26)) + string(rune('a'+i%26))
+		items = append(items, sdk.Item{ID: title, Title: title})
+	}
+	// Twenty columns cannot fit 720 DIPs: the grid shows fewer, and Down goes to the item below.
+	r.Push("test", &sdk.Grid{Items: items, Columns: 20})
+	tt.Frame()
+	tt.Frame()
+	tt.Key(0, ui.KeyDown)
+	page := r.stack[0].(*listPage)
+	below := items[page.selected].Title
+	first, _ := tt.Find(items[0].Title)
+	under, _ := tt.Find(below)
+	if page.selected == 0 || first.X != under.X || under.Y <= first.Y {
+		t.Errorf("Down chose %q at %+v; the first item is at %+v", below, under, first)
+	}
+}

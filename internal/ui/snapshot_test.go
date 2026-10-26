@@ -124,7 +124,7 @@ func TestSnapshotViews(t *testing.T) {
 	for _, e := range []string{"😀", "😁", "😂", "🤣", "😃", "😄", "😅", "😆", "😉", "😊", "😋", "😎"} {
 		emoji = append(emoji, sdk.Item{ID: e, Title: "rosto " + e, Icon: sdk.Icon{Text: e}, Actions: acts})
 	}
-	shot("grid", &sdk.Grid{Title: "Emoji", Items: emoji})
+	shot("grid", &sdk.Grid{Title: "Emoji", Items: emoji, Columns: 8})
 	shot("detail", &sdk.Detail{Title: "Sobre", Markdown: "# Althea\n\nUm launcher **rápido** e privado.\n\n- Busca\n- Extensões", Metadata: []sdk.Metadata{{Label: "Versão", Text: "1.0.0"}}, Actions: acts})
 	shot("form", &sdk.Form{Title: "Novo snippet", Fields: []sdk.Field{
 		{ID: "name", Title: "Nome", Placeholder: "Assinatura", Required: true},

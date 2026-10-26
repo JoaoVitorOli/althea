@@ -40,6 +40,9 @@ type listPage struct {
 	selected int // in shown
 	loading  bool
 
+	// cellRows are the tops of the grid's cells the last frame built, by item.
+	cellRows map[int]float32
+
 	searching func() // cancels the search in flight
 	searches  int    // searches asked, so that a late one is dropped
 	md        markdown.Options
@@ -266,7 +269,7 @@ func (p *listPage) columns() int {
 func (p *listPage) keys(c *ui.Context) {
 	step := 1
 	if p.src.grid {
-		step = p.columns()
+		step = p.laidOutColumns()
 	}
 	if c.Shortcut(0, ui.KeyDown) {
 		p.choose(p.selected + step)
@@ -371,12 +374,15 @@ func (p *listPage) listView(c *ui.Context) ui.Element {
 func (p *listPage) grid(c *ui.Context) {
 	t := c.Theme()
 	cols := p.columns()
-	const pad, gap = 10, 8
+	// The gap MyGo counts columns with, so that the cells come out as wide as asked.
+	gap := t.Space(2)
+	const pad = 10
 	w, _ := c.Size()
 	// A little under the width each column has, leaving room for the scroll bar, so that
 	// rounding never costs a column.
 	const scrollBar = 16
 	cell := (w-2*pad-scrollBar-float32(cols-1)*gap)/float32(cols) - 1
+	p.cellRows = map[int]float32{}
 	ui.GridView(c, &p.gridView, len(p.shown), cell, cell+22, func(i int) {
 		s := p.shown[i]
 		// Every cell has the border, clear but for the chosen one's, so that nothing moves.
@@ -392,6 +398,9 @@ func (p *listPage) grid(c *ui.Context) {
 			p.choose(i)
 			p.r.runPage(p, 0)
 		}
+		if b := box.LayoutBounds(); b.H > 0 {
+			p.cellRows[i] = b.Y
+		}
 		box.Children(func() {
 			ui.Row(c).Grow(1).Center().Children(func() {
 				p.r.icon(c, s.item.Icon, min(cell*0.5, 56), t.TextMuted)
@@ -399,6 +408,22 @@ func (p *listPage) grid(c *ui.Context) {
 			ui.Text(c, s.item.Title).FontSize(p.r.theme.Font.Size - 3).TextColor(t.TextMuted).SingleLine()
 		})
 	}).Grow(1).Padding(pad).Gap(gap)
+}
+
+// laidOutColumns is how many items a row of the grid held in the last frame, which Up and Down
+// move by: the columns asked for may not fit the window. The cells built then tell, by how many
+// share a row.
+func (p *listPage) laidOutColumns() int {
+	perRow := map[float32]int{}
+	most := 0
+	for _, y := range p.cellRows {
+		perRow[y]++
+		most = max(most, perRow[y])
+	}
+	if most == 0 {
+		return p.columns()
+	}
+	return most
 }
 
 // r10 is the radius of a grid's cells: the rows', a little rounder.
