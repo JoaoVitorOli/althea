@@ -1,4 +1,5 @@
 [launcher]
+paste_unsupported = "Pasting into other apps is not supported here yet: the text is on the clipboard."
 title = "Althea"
 search_placeholder = "Search for apps and commands…"
 search_label = "Search"

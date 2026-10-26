@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"sync"
@@ -36,6 +37,8 @@ type searcher struct {
 	mu        sync.Mutex
 	cancel    context.CancelFunc
 	refreshed time.Time
+
+	refreshing sync.Mutex // held while the registry refreshes
 }
 
 func (a *althea) setUpSearch() error {
@@ -136,14 +139,26 @@ func (a *althea) setUpPreferences(exts []sdk.Extension) *settingsExtension {
 // refresh collects the extensions' items again, unless it did a moment ago, then shows the
 // results of the current query anew.
 func (s *searcher) refresh() {
+	s.refreshIf(func(last time.Time) bool { return time.Since(last) >= refreshEvery })
+}
+
+// refreshNow collects the items again whenever it was last done, as after an extension
+// changed them.
+func (s *searcher) refreshNow() { s.refreshIf(func(time.Time) bool { return true }) }
+
+// refreshIf refreshes when due says so of the time of the last refresh. Refreshes run one at
+// a time, so that a slow one never replaces the items of a newer one.
+func (s *searcher) refreshIf(due func(last time.Time) bool) {
 	s.mu.Lock()
-	if time.Since(s.refreshed) < refreshEvery {
+	if !due(s.refreshed) {
 		s.mu.Unlock()
 		return
 	}
 	s.refreshed = time.Now()
 	s.mu.Unlock()
 
+	s.refreshing.Lock()
+	defer s.refreshing.Unlock()
 	start := time.Now()
 	if err := s.registry.Refresh(context.Background()); err != nil {
 		s.a.log.Warn("refresh", "err", err)
@@ -258,6 +273,29 @@ func (h *hostContext) Open(target string) error {
 func (*hostContext) CopyText(text string) error {
 	mygo.Clipboard.WriteText(text)
 	return nil
+}
+
+func (h *hostContext) Refresh() {
+	if h.a.search != nil {
+		go h.a.search.refreshNow()
+	}
+}
+
+func (*hostContext) ClipboardText() string { return mygo.Clipboard.ReadText() }
+
+func (h *hostContext) Paste(text string) error {
+	mygo.Clipboard.WriteText(text)
+	paster := h.a.services.Paster
+	if paster == nil {
+		return errors.New(h.a.catalog.T("launcher.paste_unsupported"))
+	}
+	hidden := make(chan struct{})
+	h.a.launcher.Window().Update(func() {
+		h.a.launcher.Hide()
+		close(hidden)
+	})
+	<-hidden
+	return paster.Paste(h.a.pasteTarget.Load())
 }
 
 func (h *hostContext) Hide() { h.a.launcher.Window().Update(h.a.launcher.Hide) }

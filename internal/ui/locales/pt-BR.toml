@@ -1,4 +1,5 @@
 [launcher]
+paste_unsupported = "Colar em outros apps ainda não funciona aqui: o texto está na área de transferência."
 title = "Althea"
 search_placeholder = "Busque apps e comandos…"
 search_label = "Buscar"

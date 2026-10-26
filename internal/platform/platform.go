@@ -61,6 +61,14 @@ type Vault interface {
 	Delete(name string) error
 }
 
+// Paster pastes into the app the user was in, as snippets and clipboard history do.
+type Paster interface {
+	// Foreground returns the window that has the keyboard, to paste into later.
+	Foreground() uintptr
+	// Paste gives window the keyboard back and pastes the clipboard there.
+	Paste(window uintptr) error
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Instance SingleInstance
@@ -80,4 +88,6 @@ type Services struct {
 	// EditFile opens a file in an editor, never running it, as opening a script would; nil
 	// where Althea cannot tell.
 	EditFile func(path string) error
+	// Paster is nil where Althea cannot paste into other apps yet, as on Linux.
+	Paster Paster
 }

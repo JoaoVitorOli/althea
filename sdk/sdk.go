@@ -114,8 +114,16 @@ type Context interface {
 	Open(target string) error
 	// CopyText puts text on the clipboard.
 	CopyText(text string) error
+	// ClipboardText is the text on the clipboard, "" when it holds none.
+	ClipboardText() string
+	// Paste puts text on the clipboard and pastes it into the app the user was in before the
+	// launcher showed, hiding the launcher.
+	Paste(text string) error
 	// Hide hides the launcher, as after an action that hands over to another app.
 	Hide()
+	// Refresh asks the host to collect the extensions' items again, as after the extension
+	// added or removed some.
+	Refresh()
 	// Toast shows a short message in the launcher.
 	Toast(message string)
 	// T translates a key of the extension's Messages into the user's language, filling

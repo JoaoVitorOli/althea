@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -82,7 +83,10 @@ type althea struct {
 	root     *ui.Root
 	tray     *shell.Tray
 	search   *searcher
-	prefs    *preferences
+	// pasteTarget is the window that had the keyboard before the launcher showed, which
+	// Paste pastes into.
+	pasteTarget atomic.Uintptr
+	prefs       *preferences
 	// prefsSettings are the settings commands, which also ask for missing preferences.
 	prefsSettings *settingsExtension
 	hotkey        string
@@ -97,6 +101,9 @@ func (a *althea) ready() {
 		Material:   a.root.Theme().Material.Kind,
 		ResetAfter: time.Duration(s.Window.ResetAfter),
 		OnShow: func(reset bool) {
+			if p := a.services.Paster; p != nil {
+				a.pasteTarget.Store(p.Foreground())
+			}
 			if reset {
 				a.root.Reset()
 			}

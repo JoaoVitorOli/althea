@@ -30,8 +30,13 @@ type Context struct {
 	Copied []string
 	Toasts []string
 	Hidden int
-	Pushed []sdk.View
-	Popped int
+	// Refreshed counts the refreshes asked.
+	Refreshed int
+	// Pasted are the texts pasted; Clipboard is what ClipboardText returns.
+	Pasted    []string
+	Clipboard string
+	Pushed    []sdk.View
+	Popped    int
 	// Store is what the extension kept in Storage, by key.
 	Store map[string][]byte
 	// Prefs are the values of the extension's preferences: their defaults at first, for the
@@ -122,6 +127,30 @@ func (c *Context) CopyText(text string) error {
 	defer c.mu.Unlock()
 	c.Copied = append(c.Copied, text)
 	return nil
+}
+
+// ClipboardText returns Clipboard.
+func (c *Context) ClipboardText() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Clipboard
+}
+
+// Paste records text, puts it in Clipboard and counts a hide, as the host hides to paste.
+func (c *Context) Paste(text string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Pasted = append(c.Pasted, text)
+	c.Clipboard = text
+	c.Hidden++
+	return nil
+}
+
+// Refresh counts.
+func (c *Context) Refresh() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Refreshed++
 }
 
 // Hide counts.
