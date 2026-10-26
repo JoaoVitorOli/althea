@@ -173,3 +173,12 @@ type Entry struct {
 	Key   string
 	Value []byte
 }
+
+// Service is an extension with work of its own in the background while Althea runs, as
+// watching the clipboard or the keyboard.
+type Service interface {
+	// Serve runs until ctx is done. The host starts it once the extensions are set up, and
+	// again, with a new ctx, each time the extension's preferences change; a Serve that
+	// returns before is not run again until then. Its error is logged.
+	Serve(ctx Context) error
+}

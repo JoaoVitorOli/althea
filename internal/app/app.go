@@ -89,8 +89,10 @@ type althea struct {
 	prefs       *preferences
 	// prefsSettings are the settings commands, which also ask for missing preferences.
 	prefsSettings *settingsExtension
-	hotkey        string
-	unbind        func()
+	// background runs the extensions' services.
+	background *services
+	hotkey     string
+	unbind     func()
 }
 
 func (a *althea) ready() {

@@ -60,6 +60,8 @@ func (a *althea) setUpSearch() error {
 		return err
 	}
 	exts = append(exts, settings)
+	a.background = newServices(a, exts)
+	a.prefs.changed = a.background.restart
 
 	f, err := frecency.Load(context.Background(), a.db.KV("althea.frecency"), time.Now)
 	if err != nil {
@@ -77,6 +79,8 @@ func (a *althea) setUpSearch() error {
 	a.root.Host = viewHost{a}
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	go s.refresh()
+	a.background.startAll()
+	mygo.App.OnWillQuit(func(*mygo.QuitEvent) { a.background.stopAll() })
 	return nil
 }
 

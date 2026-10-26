@@ -27,6 +27,8 @@ type preferences struct {
 	mu     sync.RWMutex
 	decl   map[string][]sdk.Preference // by extension
 	values map[string]prefs.Values
+	// changed hears of each extension whose values changed, outside the lock.
+	changed func(ext string)
 }
 
 func newPreferences(path string, vault platform.Vault, log *slog.Logger) *preferences {
@@ -45,18 +47,28 @@ func (p *preferences) declare(ext string, decl []sdk.Preference) {
 
 // resolve reads every extension's values from the settings, logging what is wrong in them.
 func (p *preferences) resolve(s config.Settings) {
+	var changed []string
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	for ext, decl := range p.decl {
 		values, problems := prefs.Resolve(decl, s.Extensions[ext])
 		for _, pr := range problems {
 			p.log.Warn("preference problem", "extension", ext, "preference", pr.Name, "problem", pr.Message)
+		}
+		if old, ok := p.values[ext]; ok && !maps.Equal(old, values) {
+			changed = append(changed, ext)
 		}
 		p.values[ext] = values
 	}
 	for ext := range s.Extensions {
 		if _, ok := p.decl[ext]; !ok {
 			p.log.Warn("preferences of an unknown extension", "extension", ext)
+		}
+	}
+	notify := p.changed
+	p.mu.Unlock()
+	if notify != nil {
+		for _, ext := range changed {
+			notify(ext)
 		}
 	}
 }
@@ -141,7 +153,11 @@ func (p *preferences) save(ext string, typed sdk.Values) error {
 	// The watcher rereads the file in a moment; the values hold until then, for what runs now.
 	p.mu.Lock()
 	p.values[ext] = updated
+	notify := p.changed
 	p.mu.Unlock()
+	if notify != nil {
+		notify(ext) // a secret may have changed, which the file does not show
+	}
 	return errors.Join(errs...)
 }
 
