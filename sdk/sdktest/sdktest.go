@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/JoaoVitorOli/althea/internal/i18n"
+	"github.com/JoaoVitorOli/althea/internal/prefs"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
@@ -29,7 +30,12 @@ type Context struct {
 	Pushed []sdk.View
 	Popped int
 	// Store is what the extension kept in Storage, by key.
-	Store   map[string][]byte
+	Store map[string][]byte
+	// Prefs are the values of the extension's preferences: their defaults at first, for the
+	// test to change. Secrets are the secret ones.
+	Prefs   map[string]string
+	Secrets map[string]string
+
 	catalog *i18n.Catalog
 	prefix  string
 	lang    string
@@ -45,7 +51,22 @@ func New(t testing.TB, ext sdk.Extension, lang string) *Context {
 			t.Fatal(err)
 		}
 	}
+	c.Prefs, c.Secrets = map[string]string{}, map[string]string{}
+	if cf, ok := ext.(sdk.Configurable); ok {
+		values, _ := prefs.Resolve(cf.Preferences(c), nil)
+		maps.Copy(c.Prefs, values)
+	}
 	return c
+}
+
+// Preferences reads Prefs and Secrets.
+func (c *Context) Preferences() sdk.Preferences {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	secrets := maps.Clone(c.Secrets)
+	return prefs.Preferences{Values: maps.Clone(c.Prefs), ReadSecret: func(name string) (string, error) {
+		return secrets[name], nil
+	}}
 }
 
 // Log discards.

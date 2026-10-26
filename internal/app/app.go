@@ -82,8 +82,11 @@ type althea struct {
 	root     *ui.Root
 	tray     *shell.Tray
 	search   *searcher
-	hotkey   string
-	unbind   func()
+	prefs    *preferences
+	// prefsSettings are the settings commands, which also ask for missing preferences.
+	prefsSettings *settingsExtension
+	hotkey        string
+	unbind        func()
 }
 
 func (a *althea) ready() {

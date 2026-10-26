@@ -46,6 +46,16 @@ type SingleInstance interface {
 	Lock(name string, onSecond func()) (first bool, release func(), err error)
 }
 
+// Vault keeps secrets, as API keys, in the system's credential store (docs/adr/0008-secrets.md),
+// by a name such as "Althea/althea.ai/api_key".
+type Vault interface {
+	// Get returns the secret of name, and whether there is one.
+	Get(name string) (secret string, ok bool, err error)
+	Set(name, secret string) error
+	// Delete removes the secret of name; removing one that is not there is not an error.
+	Delete(name string) error
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Instance SingleInstance
@@ -56,4 +66,7 @@ type Services struct {
 	KeyHook KeyHook
 	// Locale returns the user's display language, such as "pt-BR", or "" when unknown.
 	Locale func() string
+	// Vault is nil where Althea cannot keep secrets yet, as on Linux before v1.1: secret
+	// preferences cannot be set there.
+	Vault Vault
 }

@@ -3,6 +3,7 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -39,7 +40,7 @@ func TestLoadMissingFileGivesDefaults(t *testing.T) {
 		Hotkey:  config.Hotkey{Toggle: "Alt+Space"},
 		Window:  config.Window{ResetAfter: config.Duration(90 * time.Second)},
 	}
-	if s != want {
+	if !reflect.DeepEqual(s, want) {
 		t.Errorf("Load = %+v, want %+v", s, want)
 	}
 }
@@ -88,7 +89,7 @@ reset_after = "-5s"
 	}
 	want := config.Defaults()
 	want.Theme.Name = "midnight"
-	if s != want {
+	if !reflect.DeepEqual(s, want) {
 		t.Errorf("Load = %+v, want %+v", s, want)
 	}
 	wantProblems := []config.Problem{
@@ -108,7 +109,7 @@ func TestLoadReportsUnparsableDurationAsProblem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s != config.Defaults() {
+	if !reflect.DeepEqual(s, config.Defaults()) {
 		t.Errorf("Load = %+v, want the defaults", s)
 	}
 	if len(problems) != 1 || problems[0].Line != 2 || problems[0].Key != "window.reset_after" {
@@ -137,7 +138,7 @@ func TestWriteDefaultCreatesACommentedFileOfTheDefaults(t *testing.T) {
 		t.Error("default settings file has no comments")
 	}
 	s, problems, err := config.Load(path)
-	if err != nil || len(problems) != 0 || s != config.Defaults() {
+	if err != nil || len(problems) != 0 || !reflect.DeepEqual(s, config.Defaults()) {
 		t.Errorf("Load(default file) = %+v, %v, %v; want the defaults", s, problems, err)
 	}
 }
@@ -168,7 +169,7 @@ reset_after = "2m"
 	want := config.Defaults()
 	want.General.Language = "pt-BR"
 	want.Window.ResetAfter = config.Duration(2 * time.Minute)
-	if s != want {
+	if !reflect.DeepEqual(s, want) {
 		t.Errorf("Load = %+v, want %+v", s, want)
 	}
 }

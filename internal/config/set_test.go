@@ -87,3 +87,41 @@ func TestSetCreatesTheDefaultFileFirst(t *testing.T) {
 		t.Error("the default file's comments are missing")
 	}
 }
+
+func TestSetPathWritesAnExtensionsTable(t *testing.T) {
+	path := write(t, "[general]\nlanguage = \"en\"\n")
+	if err := config.SetPath(path, []string{"extensions", "althea.ai", "model"}, "gpt-5"); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SetPath(path, []string{"extensions", "althea.ai", "temperature"}, 0.5); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.SetPath(path, []string{"extensions", "althea.ai", "model"}, "llama"); err != nil {
+		t.Fatal(err)
+	}
+	want := "[general]\nlanguage = \"en\"\n\n[extensions.\"althea.ai\"]\nmodel = \"llama\"\ntemperature = 0.5\n"
+	if got := read(t, path); got != want {
+		t.Errorf("file =\n%s\nwant\n%s", got, want)
+	}
+	s, problems, err := config.Load(path)
+	if err != nil || len(problems) > 0 {
+		t.Fatalf("Load: %v %v", problems, err)
+	}
+	if got := s.Extensions["althea.ai"]["model"]; got != "llama" {
+		t.Errorf("extensions = %v", s.Extensions)
+	}
+}
+
+func TestUnsetRemovesTheLineAlone(t *testing.T) {
+	path := write(t, "[extensions.\"althea.ai\"]\n# the model\nmodel = \"llama\"   # local\ntemperature = 0.5\n")
+	if err := config.Unset(path, []string{"extensions", "althea.ai", "model"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := config.Unset(path, []string{"extensions", "althea.ai", "missing"}); err != nil {
+		t.Fatal(err)
+	}
+	want := "[extensions.\"althea.ai\"]\n# the model\ntemperature = 0.5\n"
+	if got := read(t, path); got != want {
+		t.Errorf("file =\n%s\nwant\n%s", got, want)
+	}
+}

@@ -14,6 +14,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/platform"
+	"github.com/JoaoVitorOli/althea/internal/prefs"
 	"github.com/JoaoVitorOli/althea/internal/registry"
 	"github.com/JoaoVitorOli/althea/internal/store"
 	"github.com/JoaoVitorOli/althea/internal/ui"
@@ -42,13 +43,16 @@ func (a *althea) setUpSearch() error {
 		System: systemPlatform(a.services.System),
 	})
 	for _, e := range exts {
-		m := e.Manifest()
-		if m.Messages != nil {
-			if err := a.catalog.Add(m.ID, m.Messages); err != nil {
-				return err
-			}
+		if err := a.addMessages(e.Manifest()); err != nil {
+			return err
 		}
 	}
+	settings := a.setUpPreferences(exts)
+	if err := a.addMessages(settings.Manifest()); err != nil {
+		return err
+	}
+	exts = append(exts, settings)
+
 	f, err := frecency.Load(context.Background(), a.db.KV("althea.frecency"), time.Now)
 	if err != nil {
 		return err
@@ -66,6 +70,45 @@ func (a *althea) setUpSearch() error {
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	go s.refresh()
 	return nil
+}
+
+func (a *althea) addMessages(m sdk.Manifest) error {
+	if m.Messages == nil {
+		return nil
+	}
+	return a.catalog.Add(m.ID, m.Messages)
+}
+
+// setUpPreferences gathers the extensions' preferences and their values, keeps the values in
+// step with settings.toml, and returns the settings commands that edit them.
+func (a *althea) setUpPreferences(exts []sdk.Extension) *settingsExtension {
+	a.prefs = newPreferences(a.paths.Settings, a.services.Vault, a.log)
+	s := &settingsExtension{prefs: a.prefs}
+	a.prefsSettings = s
+	for _, e := range exts {
+		c, ok := e.(sdk.Configurable)
+		if !ok {
+			continue
+		}
+		m := e.Manifest()
+		var decl []sdk.Preference
+		func() {
+			defer func() {
+				if p := recover(); p != nil {
+					a.log.Error("extension panicked", "extension", m.ID, "call", "preferences", "panic", p)
+				}
+			}()
+			decl = c.Preferences(a.extensionContext(context.Background(), m.ID))
+		}()
+		if len(decl) == 0 {
+			continue
+		}
+		a.prefs.declare(m.ID, decl)
+		s.exts = append(s.exts, m)
+	}
+	a.prefs.resolve(a.Settings())
+	a.OnSettings(a.prefs.resolve)
+	return s
 }
 
 // refresh collects the extensions' items again, unless it did a moment ago, then shows the
@@ -120,6 +163,10 @@ func (s *searcher) run(res registry.Result, action int) {
 			return
 		}
 		ctx := s.a.extensionContext(context.Background(), res.Extension)
+		if s.a.prefs != nil && len(s.a.prefs.missing(res.Extension)) > 0 {
+			s.askPreferences(res, act)
+			return
+		}
 		if err := act.Run(ctx); err != nil {
 			s.a.log.Warn("action failed", "extension", res.Extension, "action", act.Title, "err", err)
 			ctx.Toast(err.Error())
@@ -149,6 +196,21 @@ func (h viewHost) Go(ext string, fn func(ctx sdk.Context) error) (cancel func())
 }
 
 func (h viewHost) Update(fn func()) { h.a.launcher.Window().Update(fn) }
+
+// askPreferences shows the preferences of an extension that misses required ones, and runs the
+// action once they are saved.
+func (s *searcher) askPreferences(res registry.Result, act sdk.Action) {
+	settings := s.a.extensionContext(context.Background(), settingsID)
+	m := sdk.Manifest{ID: res.Extension, Title: res.Extension}
+	for _, e := range s.a.prefsSettings.exts {
+		if e.ID == res.Extension {
+			m = e
+		}
+	}
+	settings.Push(s.a.prefsSettings.form(settings, m, func(sdk.Context) error {
+		return act.Run(s.a.extensionContext(context.Background(), res.Extension))
+	}))
+}
 
 // hostContext is the sdk.Context extensions get.
 type hostContext struct {
@@ -193,6 +255,13 @@ func (h *hostContext) Push(v sdk.View) {
 }
 
 func (h *hostContext) Pop() { h.a.launcher.Window().Update(h.a.root.Pop) }
+
+func (h *hostContext) Preferences() sdk.Preferences {
+	if h.a.prefs == nil {
+		return prefs.Preferences{}
+	}
+	return h.a.prefs.of(h.ext)
+}
 
 func (h *hostContext) Storage() sdk.Storage {
 	return extensionStorage{h.a.db.KV(storageNamespace(h.ext))}

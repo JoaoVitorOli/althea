@@ -20,12 +20,15 @@ import (
 	"github.com/JoaoVitorOli/althea/internal/tomlpos"
 )
 
-// Settings are the host's settings. Extensions' preferences join them in M3.
+// Settings are the host's settings, and the extensions' preferences as written.
 type Settings struct {
 	General General `toml:"general"`
 	Theme   Theme   `toml:"theme"`
 	Hotkey  Hotkey  `toml:"hotkey"`
 	Window  Window  `toml:"window"`
+	// Extensions are the [extensions."<id>"] tables, by extension ID, unchecked: only the
+	// extension knows its preferences (see internal/prefs).
+	Extensions map[string]map[string]any `toml:"extensions"`
 }
 
 // General holds app-wide settings.
@@ -124,6 +127,7 @@ type file struct {
 	Window  struct {
 		ResetAfter *string `toml:"reset_after"`
 	} `toml:"window"`
+	Extensions map[string]map[string]any `toml:"extensions"`
 }
 
 // Load reads the settings file at path. A missing file gives the defaults. Problems are
@@ -168,7 +172,7 @@ func parse(data []byte) (Settings, []Problem, error) {
 		problems = append(problems, Problem{Line: lines[key], Key: key, Message: message})
 	}
 
-	s := Settings{General: f.General, Theme: f.Theme, Hotkey: f.Hotkey, Window: defaults.Window}
+	s := Settings{General: f.General, Theme: f.Theme, Hotkey: f.Hotkey, Window: defaults.Window, Extensions: f.Extensions}
 	if !slices.Contains(Languages, s.General.Language) {
 		invalid("general.language", `must be "system", "en" or "pt-BR"`)
 		s.General.Language = defaults.General.Language

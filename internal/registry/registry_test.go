@@ -52,6 +52,7 @@ func (hostContext) Language() string              { return "en" }
 func (hostContext) Push(sdk.View)                 {}
 func (hostContext) Pop()                          {}
 func (hostContext) Storage() sdk.Storage          { return nil }
+func (hostContext) Preferences() sdk.Preferences  { return nil }
 
 func newRegistry(t *testing.T, exts ...sdk.Extension) *registry.Registry {
 	t.Helper()

@@ -27,3 +27,9 @@ toggle = "Alt+Space"
 [window]
 # How long Althea remembers where you were while hidden; "0s" always opens at the start.
 reset_after = "1m30s"
+
+# Extensions keep their preferences in tables of their own, which "Extension Preferences"
+# in Althea writes, as:
+# [extensions."althea.weather"]
+# units = "metric"
+# Secrets, as API keys, are kept in Windows Credential Manager, never here.

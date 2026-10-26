@@ -10,6 +10,6 @@ import (
 func Services() platform.Services {
 	return platform.Services{
 		Chrome: windows.Chrome{}, KeyHook: windows.KeyHook{}, System: windows.System{},
-		Instance: windows.SingleInstance{}, Locale: windows.Locale,
+		Instance: windows.SingleInstance{}, Locale: windows.Locale, Vault: windows.Vault{},
 	}
 }

@@ -126,6 +126,8 @@ type Context interface {
 	Pop()
 	// Storage is the extension's own key-value store, kept across runs.
 	Storage() Storage
+	// Preferences are the values the user set for the extension's Preferences.
+	Preferences() Preferences
 }
 
 // Storage keeps an extension's values by key in Althea's database, apart from every other
