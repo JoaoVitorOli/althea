@@ -120,4 +120,10 @@ type Services struct {
 	Typist Typist
 	// Clipboard is nil where Althea cannot watch the clipboard yet, as on Linux.
 	Clipboard ClipboardWatcher
+	// KnownFolders returns the user's Desktop, Documents, Downloads, Pictures, Videos and
+	// Music folders; nil where the system does not say.
+	KnownFolders func() []string
+	// WatchTree calls changed with each path that changes under dir, "" when changes were
+	// lost; nil where Althea cannot watch whole trees yet.
+	WatchTree func(dir string, changed func(path string)) (stop func(), err error)
 }

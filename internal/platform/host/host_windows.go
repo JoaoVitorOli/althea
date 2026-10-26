@@ -13,5 +13,6 @@ func Services() platform.Services {
 		Instance: windows.SingleInstance{}, Locale: windows.Locale, Vault: windows.Vault{},
 		Command: windows.Command, EditFile: windows.EditFile, Paster: windows.Paster{},
 		Typist: windows.Typist{}, Clipboard: windows.ClipboardWatcher{},
+		KnownFolders: windows.KnownFolders, WatchTree: windows.WatchTree,
 	}
 }
