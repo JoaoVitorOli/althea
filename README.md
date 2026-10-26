@@ -42,9 +42,13 @@ live in `%APPDATA%\Althea\settings.toml`, commented, and apply as you save.
 ## Make it yours
 
 Every feature, the built-in ones included, is a Go package that implements the public
-[`sdk`](sdk/sdk.go). Adding one to a fork is a new package in [`extensions/`](extensions/) and
-one line in [`extensions/builtin.go`](extensions/builtin.go). The
-[extensions README](extensions/README.md) explains the boundary to keep.
+[`sdk`](sdk/sdk.go): commands, items to search, views (lists, grids, documents, forms), its own
+storage and settings. Adding one to a fork is a new package in [`extensions/`](extensions/) and
+one line in [`extensions/builtin.go`](extensions/builtin.go); the
+[extension guide](docs/extensions.md) walks through a complete one.
+
+Or skip Go: any script in `%APPDATA%\Althea\scripts` with an `@althea.title` comment becomes a
+command (see [Script Commands](docs/extensions.md#script-commands)).
 
 ## Read more
 
@@ -52,6 +56,7 @@ one line in [`extensions/builtin.go`](extensions/builtin.go). The
 |---|---|
 | [Spec](docs/spec.md) | What v1 does, its budgets and milestones |
 | [Architecture](docs/architecture.md) | How the pieces fit and which way dependencies point |
+| [Writing extensions](docs/extensions.md) | How to add a feature, in Go or as a script |
 | [Decision records](docs/adr/README.md) | Why each big choice was made |
 | [Contributing](CONTRIBUTING.md) | Setup, tooling and conventions |
 

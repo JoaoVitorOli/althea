@@ -30,20 +30,21 @@ it (see [Dependency rules](#dependency-rules)), so the boundary cannot drift qui
 | `cmd/althea` | `main`: nothing but `app.Run` |
 | `internal/app` | The composition root, the only package that knows all the others. Builds the services, wires the search to the window, applies reloaded settings |
 | `internal/shell` | The launcher panel: where it opens, when it hides, when it starts over; the tray |
-| `internal/ui` | Every view: the search, results, action panel, onboarding; theme tokens mapped to MyGo; motion tokens |
+| `internal/ui` | Every view: the search, results, action panel, onboarding, and the pages that draw extensions' views; theme tokens mapped to MyGo; motion tokens |
 | `internal/registry` | What the extensions offer, gathered and queried, with each extension's failures contained |
 | `internal/search` | The fuzzy match and the ranking |
 | `internal/frecency` | How often and how recently each item is picked |
 | `internal/config`, `internal/theme` | The TOML files the user edits: validation with line numbers, hot-reload, in-place edits that keep comments |
+| `internal/prefs` | Extensions' preferences: the values in `settings.toml` checked against what each declares |
 | `internal/store` | One SQLite database: per-extension key-value, migrations, a query counter for tests |
 | `internal/i18n`, `paths`, `logging`, `fswatch`, `tomlpos`, `hotkey` | Small single-purpose pieces the above share |
 | `internal/platform` | Interfaces for OS services and their [adapters](../internal/platform/README.md) |
 | `sdk`, `sdk/sdktest` | The public extension API, and a recording `Context` for testing extensions |
-| `extensions/*` | Every feature. [How to add one](../extensions/README.md) |
+| `extensions/*` | Every feature, Script Commands included. [How to add one](extensions.md) |
 
-Planned packages, from the spec: `internal/secrets` (OS vault, encryption at rest),
-`internal/netpolicy` (the only HTTP client), `internal/scripts` (Script Commands), and the view
-renderers for `sdk` views in M3.
+Planned packages, from the spec: encryption at rest for clipboard history and notes (its key in
+the vault that `platform.Vault` already reaches), and `internal/netpolicy` (the only HTTP
+client).
 
 ## Dependency rules
 
@@ -76,13 +77,35 @@ type ItemSource interface { // contributes items to the root search, as Applicat
 type Answerer interface { // answers a query directly, above the results, as Calculator does
 	Answer(ctx Context, query string) (*Item, error)
 }
+
+type Configurable interface { // declares preferences, edited in Extension Preferences
+	Preferences(ctx Context) []Preference
+}
 ```
 
 `Context` lends what the host offers for one call: cancellation, a logger, opening files and
-URLs, the clipboard, hiding the launcher, toasts, translation and the user's language. Each
-`Item` carries its `Actions`; the first runs on Enter, the second on Ctrl+Enter, all of them
-from Ctrl+K, and any of them may ask for confirmation first. Views (List, Grid, Detail, Form),
-preferences and storage join the SDK in M3.
+URLs, the clipboard, hiding the launcher, toasts, translation and the user's language, the
+extension's storage and preferences, and `Push`/`Pop` for views. Each `Item` carries its
+`Actions`; the first runs on Enter, the second on Ctrl+Enter, all of them from Ctrl+K, and any
+of them may ask for confirmation first. [extensions.md](extensions.md) is the guide.
+
+### Views
+
+Extensions push view values (`List`, `Grid`, `Detail`, `Form`); `ui.Root` keeps them in a stack
+of pages over the root search and draws the one on top. Extension code that a page calls
+(loading items, searching, submitting a form, running an action) goes through `ui.Host`, which
+`app` implements: it runs on a goroutine with a cancellable context, its panics are recovered,
+its errors become toasts, and its results come back with `Window.Update`. A page that closes
+cancels its work in flight, and a search answered after a newer one began is dropped.
+
+### Preferences and secrets
+
+`settings.toml` keeps each extension's values in an `[extensions."<id>"]` table, which
+`config` loads unchecked; `prefs.Resolve` checks it against the extension's declaration, and a
+wrong value falls back to the default with a logged problem, as the host's settings do.
+Secrets never reach the file: `platform.Vault` keeps them in Windows Credential Manager under
+`Althea/<extension>/<name>`. The Extension Preferences screen is an extension too, living in
+`app` because it writes the file and the vault.
 
 ## A keystroke, end to end
 

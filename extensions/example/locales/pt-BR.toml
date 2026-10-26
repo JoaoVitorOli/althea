@@ -1,0 +1,38 @@
+copied = "Copiado"
+
+[prefs]
+order = "Ordem"
+newest = "Mais novas primeiro"
+oldest = "Mais antigas primeiro"
+
+[list]
+title = "Lista de tarefas"
+search = "Buscar tarefas…"
+empty = "Nada para fazer"
+empty_hint = "Adicione uma tarefa com Ctrl+N."
+open = "A fazer"
+done = "Feitas"
+
+[add]
+title = "Adicionar tarefa"
+submit = "Adicionar"
+name = "Título"
+name_placeholder = "Regar as plantas"
+notes = "Notas"
+too_long = "Use menos de 120 caracteres."
+saved = "\"{title}\" adicionada"
+not_saved = "A tarefa não foi salva"
+
+[action]
+done = "Marcar como feita"
+undone = "Marcar como não feita"
+show = "Mostrar detalhes"
+delete = "Apagar"
+delete_confirm = "Pressione Ctrl+D de novo para apagar"
+copy = "Copiar título"
+
+[detail]
+state = "Situação"
+added = "Adicionada"
+open = "A fazer"
+done = "Feita"

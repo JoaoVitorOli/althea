@@ -1,0 +1,38 @@
+copied = "Copied"
+
+[prefs]
+order = "Order"
+newest = "Newest first"
+oldest = "Oldest first"
+
+[list]
+title = "To-do List"
+search = "Search to-dos…"
+empty = "Nothing to do"
+empty_hint = "Add a to-do with Ctrl+N."
+open = "To do"
+done = "Done"
+
+[add]
+title = "Add To-do"
+submit = "Add"
+name = "Title"
+name_placeholder = "Water the plants"
+notes = "Notes"
+too_long = "Keep it under 120 characters."
+saved = "Added \"{title}\""
+not_saved = "The to-do was not saved"
+
+[action]
+done = "Mark as Done"
+undone = "Mark as Not Done"
+show = "Show Details"
+delete = "Delete"
+delete_confirm = "Press Ctrl+D again to delete"
+copy = "Copy Title"
+
+[detail]
+state = "State"
+added = "Added"
+open = "To do"
+done = "Done"
