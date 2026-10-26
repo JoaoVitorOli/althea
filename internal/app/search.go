@@ -283,8 +283,19 @@ func (h *hostContext) Refresh() {
 
 func (*hostContext) ClipboardText() string { return mygo.Clipboard.ReadText() }
 
-func (h *hostContext) Paste(text string) error {
-	mygo.Clipboard.WriteText(text)
+func (h *hostContext) Paste(c sdk.Clip) error {
+	switch {
+	case c.Image != nil:
+		if err := mygo.Clipboard.WriteImage(c.Image); err != nil {
+			return err
+		}
+	case len(c.Files) > 0:
+		if err := mygo.Clipboard.WriteFiles(c.Files...); err != nil {
+			return err
+		}
+	default:
+		mygo.Clipboard.WriteText(c.Text)
+	}
 	paster := h.a.services.Paster
 	if paster == nil {
 		return errors.New(h.a.catalog.T("launcher.paste_unsupported"))
@@ -295,7 +306,7 @@ func (h *hostContext) Paste(text string) error {
 		close(hidden)
 	})
 	<-hidden
-	return paster.Paste(h.a.pasteTarget.Load())
+	return paster.Paste(h.a.pasteTarget.Load(), c.CaretBack)
 }
 
 func (h *hostContext) Hide() { h.a.launcher.Window().Update(h.a.launcher.Hide) }

@@ -65,8 +65,9 @@ type Vault interface {
 type Paster interface {
 	// Foreground returns the window that has the keyboard, to paste into later.
 	Foreground() uintptr
-	// Paste gives window the keyboard back and pastes the clipboard there.
-	Paste(window uintptr) error
+	// Paste gives window the keyboard back and pastes the clipboard there, then moves the caret
+	// back characters left.
+	Paste(window uintptr, back int) error
 }
 
 // Services are the platform services of the running system.

@@ -32,8 +32,8 @@ type Context struct {
 	Hidden int
 	// Refreshed counts the refreshes asked.
 	Refreshed int
-	// Pasted are the texts pasted; Clipboard is what ClipboardText returns.
-	Pasted    []string
+	// Pasted are the clips pasted; Clipboard is what ClipboardText returns.
+	Pasted    []sdk.Clip
 	Clipboard string
 	Pushed    []sdk.View
 	Popped    int
@@ -136,12 +136,13 @@ func (c *Context) ClipboardText() string {
 	return c.Clipboard
 }
 
-// Paste records text, puts it in Clipboard and counts a hide, as the host hides to paste.
-func (c *Context) Paste(text string) error {
+// Paste records the clip, puts its text in Clipboard and counts a hide, as the host hides to
+// paste.
+func (c *Context) Paste(clip sdk.Clip) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.Pasted = append(c.Pasted, text)
-	c.Clipboard = text
+	c.Pasted = append(c.Pasted, clip)
+	c.Clipboard = clip.Text
 	c.Hidden++
 	return nil
 }

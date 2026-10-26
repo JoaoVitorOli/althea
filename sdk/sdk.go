@@ -105,6 +105,18 @@ type Icon struct {
 	Glyph string
 }
 
+// Clip is what Context.Paste pastes: text, an image or files.
+type Clip struct {
+	Text string
+	// Image is a PNG.
+	Image []byte
+	// Files are paths, pasted as copied files are, as into a folder.
+	Files []string
+	// CaretBack moves the caret this many characters left after the text is pasted, to where a
+	// snippet's {cursor} was.
+	CaretBack int
+}
+
 // Context is what the host lends an extension for one call: cancellation, a log, and the
 // host's services.
 type Context interface {
@@ -116,9 +128,9 @@ type Context interface {
 	CopyText(text string) error
 	// ClipboardText is the text on the clipboard, "" when it holds none.
 	ClipboardText() string
-	// Paste puts text on the clipboard and pastes it into the app the user was in before the
+	// Paste puts a clip on the clipboard and pastes it into the app the user was in before the
 	// launcher showed, hiding the launcher.
-	Paste(text string) error
+	Paste(c Clip) error
 	// Hide hides the launcher, as after an action that hands over to another app.
 	Hide()
 	// Refresh asks the host to collect the extensions' items again, as after the extension
