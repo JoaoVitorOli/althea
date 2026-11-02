@@ -20,6 +20,7 @@ search, answer queries, and declare preferences, by implementing more interfaces
 | `sdk.ItemSource` | `Items(ctx)`: things to search through, as installed apps | [apps](../extensions/apps/apps.go) |
 | `sdk.Answerer` | `Answer(ctx, query)`: a direct answer above the results | [calculator](../extensions/calculator/calculator.go) |
 | `sdk.FallbackSource` | `Fallbacks(ctx, query)`: an offer when the root search finds nothing | [web](../extensions/web/web.go) |
+| `sdk.QueryTaker` | `TakeQuery(ctx, query)`: what Tab does with what was typed | [ai](../extensions/ai/ai.go) |
 | `sdk.Configurable` | `Preferences(ctx)`: settings of its own | [example](../extensions/example/example.go) |
 
 ```go
@@ -111,6 +112,34 @@ A Markdown document with labeled values, and actions:
 
 Markdown is CommonMark with GitHub's tables, task lists and fenced code, which is highlighted.
 
+For text that comes little by little, as a model's answer or a download's progress, set `Stream`.
+It runs as the view opens, and each call of `show` replaces what shows. Escape stops it, cancelling
+`ctx`, and leaves what came:
+
+```go
+&sdk.Detail{
+	Title: "Summary",
+	Stream: func(ctx sdk.Context, show func(markdown string)) error {
+		return ask(ctx, text, show)
+	},
+}
+```
+
+### Chat
+
+A conversation: what was said, over a field to say more. `Send` answers what the user said, as
+`Stream` does, and `First` says something as the view opens. Keep what is said yourself, as
+[ai](../extensions/ai/chat.go) keeps its conversations:
+
+```go
+&sdk.Chat{
+	Title: "AI Chat",
+	Send: func(ctx sdk.Context, text string, show func(markdown string)) error {
+		return ask(ctx, text, show)
+	},
+}
+```
+
 ### Form
 
 Fields to fill: `TextField`, `TextArea`, `Password`, `Checkbox` and `Dropdown`. `Ctrl+Enter`
@@ -201,6 +230,53 @@ ctx.Toast(ctx.T("add.saved", "title", t.Title))
 
 Give **keywords** in both languages: search matches them whatever language the interface is
 in, so "tarefas" finds the to-do list for an English user too.
+
+## The network and the selection
+
+Make every request with `ctx.HTTP()` and the `Context` you were given. The host logs it and lets it
+through only if it comes from something the user did: running a command or an action, or opening
+a view. From `Commands`, `Items`, `Answer`, `Fallbacks`, `Preferences` and `Serve` it is refused.
+
+```go
+req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, http.NoBody)
+res, err := ctx.HTTP().Do(req)
+```
+
+`ctx.SelectedText()` reads the text selected in the app the user was in, "" when there is none. It
+presses Ctrl+C there, hiding the launcher for a moment and leaving the clipboard as it was, so call
+it only when the user asked for something to be done with the selection.
+
+## AI Commands
+
+A TOML file in the AI Commands folder (`%APPDATA%\Althea\ai-commands`; **Open AI Commands Folder**
+opens it, with an example to copy) becomes a command, needing no Go. The file's name is its ID, and a
+file named as a built-in one (`fix-grammar`, `summarize`, `explain-code`, `shorten`) replaces it.
+
+```toml
+title = { en = "Make Formal", pt-BR = "Tornar formal" } # or one text
+subtitle = "Rewrite the text in a formal tone"
+icon = "🎩"
+keywords = ["formal", "tone"]
+input = "selection"
+output = "show"
+system = "You rewrite text. Reply with the text alone."
+prompt = """
+Rewrite this in a formal tone:
+
+{text}
+"""
+```
+
+| Key | Value |
+|---|---|
+| `prompt` | Required: what is asked. `{text}` is the text, or it goes at the end without one; `{language}` is the user's language |
+| `input` | `selection`, which falls back to the clipboard, by default; or `clipboard` |
+| `output` | `show` in a view by default; `paste` over the selection; or `copy` |
+| `system` | How the model should behave |
+| `model` | Replaces the model of the AI preferences |
+| `disabled` | `true` hides a built-in command, in a file with its name |
+
+A file with a mistake is left out, and the log says why.
 
 ## Reaching the system
 

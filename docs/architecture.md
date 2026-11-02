@@ -38,13 +38,13 @@ it (see [Dependency rules](#dependency-rules)), so the boundary cannot drift qui
 | `internal/prefs` | Extensions' preferences: the values in `settings.toml` checked against what each declares |
 | `internal/store` | One SQLite database: per-extension key-value, migrations, a query counter for tests |
 | `internal/i18n`, `paths`, `logging`, `fswatch`, `tomlpos`, `hotkey` | Small single-purpose pieces the above share |
+| `internal/netpolicy` | The only way to the network: each request allowed only for something the user did, and logged |
 | `internal/platform` | Interfaces for OS services and their [adapters](../internal/platform/README.md) |
 | `sdk`, `sdk/sdktest` | The public extension API, and a recording `Context` for testing extensions |
 | `extensions/*` | Every feature, Script Commands included. [How to add one](extensions.md) |
 
-Planned packages, from the spec: encryption at rest for clipboard history and notes (its key in
-the vault that `platform.Vault` already reaches), and `internal/netpolicy` (the only HTTP
-client).
+Planned packages, from the spec: encryption at rest for notes (its key in the vault that
+`platform.Vault` already reaches).
 
 ## Dependency rules
 
@@ -81,22 +81,36 @@ type Answerer interface { // answers a query directly, above the results, as Cal
 type Configurable interface { // declares preferences, edited in Extension Preferences
 	Preferences(ctx Context) []Preference
 }
+
+type QueryTaker interface { // takes what was typed in the root search with Tab, as Quick AI does
+	TakeQuery(ctx Context, query string) *Action
+}
 ```
 
 `Context` lends what the host offers for one call: cancellation, a logger, opening files and
-URLs, the clipboard, hiding the launcher, toasts, translation and the user's language, the
+URLs, the clipboard and the selection, the network, hiding the launcher, toasts, translation and the user's language, the
 extension's storage and preferences, and `Push`/`Pop` for views. Each `Item` carries its
 `Actions`; the first runs on Enter, the second on Ctrl+Enter, all of them from Ctrl+K, and any
 of them may ask for confirmation first. [extensions.md](extensions.md) is the guide.
 
 ### Views
 
-Extensions push view values (`List`, `Grid`, `Detail`, `Form`); `ui.Root` keeps them in a stack
+Extensions push view values (`List`, `Grid`, `Detail`, `Form`, `Chat`); `ui.Root` keeps them in a stack
 of pages over the root search and draws the one on top. Extension code that a page calls
 (loading items, searching, submitting a form, running an action) goes through `ui.Host`, which
 `app` implements: it runs on a goroutine with a cancellable context, its panics are recovered,
 its errors become toasts, and its results come back with `Window.Update`. A page that closes
-cancels its work in flight, and a search answered after a newer one began is dropped.
+cancels its work in flight, and a search answered after a newer one began is dropped. A `Detail`
+with `Stream` and a `Chat` show text as it comes, and Escape stops it first, keeping what came.
+
+### The network
+
+Everything goes through `ctx.HTTP()`, a client from `internal/netpolicy`. A request leaves only if
+its context descends from `netpolicy.Allow`, which `app` adds to what the user sets off: running a
+command or an action, Tab, opening a view. What runs by itself (`Commands`, `Items`, `Answer`,
+`Fallbacks`, `Preferences`, `Serve`) has no such context, so a request from there is refused and
+logged, whatever the extension meant. Each request is logged with its method, host and path, never
+its query, headers or body. Lint keeps `http.Get` and the default client out of the code.
 
 ### Preferences and secrets
 

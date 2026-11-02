@@ -42,4 +42,8 @@ These cost a bug each. Keep them in mind when changing the adapters.
   enumerations share package-level callbacks under a mutex rather than making closures per call.
 - **Binding a hotkey waits for the main thread.** A service unbinds as it stops, and the main
   thread waits for services as Althea quits, so extensions' hotkeys go through a queue.
+- **The selection is read by pressing Ctrl+C.** Nothing else works on every kind of app. It hides the
+  launcher, gives the app the keyboard, waits for the clipboard's sequence number to move, and puts
+  the clipboard back; clipboard history ignores what changes meanwhile. Terminals are left alone,
+  where Ctrl+C stops what runs, so they have no selection to offer.
 - **System programs run by full path** (`System32\shutdown.exe`), never through `PATH`.

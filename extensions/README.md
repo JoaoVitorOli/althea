@@ -25,6 +25,7 @@ Pick the shape by what the feature is:
 | contributes things to search through | `ItemSource` | [apps](apps/apps.go): every installed app |
 | answers what was typed | `Answerer` | [calculator](calculator/calculator.go): `2+2` |
 | offers something when nothing matches | `FallbackSource` | [web](web/web.go): search the web for it |
+| takes what was typed with Tab | `QueryTaker` | [ai](ai/ai.go): ask AI about it |
 | has settings of its own | `Configurable` | [example](example/example.go): the order of to-dos |
 
 An extension can be all of them. [scripts](scripts/scripts.go) turns the scripts folder into
@@ -49,6 +50,9 @@ It is built and tested but not in `builtin.go`.
 - **Reach the system through what the host gives you.** When an extension needs the OS, as
   Applications does to list apps, take the capability as a function in a `Platform` struct and
   let `internal/app` provide it. The extension stays testable with a fake and free of MyGo.
+- **Reach the network through `ctx.HTTP()`,** with the `Context` of what the user did. Download only
+  what the user agreed to, by size, and check it against a pinned sha256, as
+  [translator](translator/install.go) does.
 - **Answer fast.** An `Answerer` that takes longer than 50 ms is dropped for that keystroke.
   Return `nil` quickly for queries that are not yours. Slow work goes in a view's `Load` or
   `Search`, or in an action.
