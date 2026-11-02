@@ -57,6 +57,7 @@ func (a *althea) setUpSearch() error {
 			Folders: a.services.KnownFolders, Watch: a.services.WatchTree,
 			Reveal: func(path string) error { mygo.Shell.ShowItemInFolder(path); return nil },
 		},
+		Windows: a.windowsPlatform(),
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {

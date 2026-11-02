@@ -12,6 +12,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
+	"github.com/JoaoVitorOli/althea/extensions/windows"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
@@ -23,6 +24,7 @@ type Platforms struct {
 	Snippets  snippets.Platform
 	Clipboard clipboard.Platform
 	Files     files.Platform
+	Windows   windows.Platform
 }
 
 // Builtin returns the built-in extensions, in the order their answers show.
@@ -37,5 +39,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		clipboard.New(p.Clipboard),
 		files.New(p.Files),
 		emoji.New(),
+		windows.New(p.Windows),
 	}
 }

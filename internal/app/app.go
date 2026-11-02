@@ -92,9 +92,11 @@ type althea struct {
 	// background runs the extensions' services.
 	background *services
 	// keys shares the keyboard hook.
-	keys   *keyboard
-	hotkey string
-	unbind func()
+	keys *keyboard
+	// shortcuts binds the extensions' hotkeys, in order.
+	shortcuts serial
+	hotkey    string
+	unbind    func()
 }
 
 func (a *althea) ready() {
