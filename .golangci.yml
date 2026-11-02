@@ -9,6 +9,7 @@ linters:
     - bodyclose
     - depguard
     - errorlint
+    - forbidigo
     - gocritic
     - gosec
     - misspell
@@ -30,6 +31,11 @@ linters:
         - unnamedResult
         - whyNoLint # nolintlint already requires explanations
         - rangeValCopy # readability first; hot loops are benchmarked instead
+    forbidigo:
+      forbid:
+        # docs/adr/0012-privacy.md: extensions use ctx.HTTP, whose requests the policy checks and logs.
+        - pattern: ^http\.(Get|Head|Post|PostForm|DefaultClient|DefaultTransport)$
+          msg: all HTTP goes through internal/netpolicy (extensions use ctx.HTTP)
     gosec:
       excludes:
         - G103 # unsafe is required for Win32 calls; reviewed per call site
@@ -96,6 +102,8 @@ linters:
         linters: [gosec, noctx, misspell] # tests misspell on purpose
       - path: _test\.go
         text: filepathJoin # tests build expected paths from literal Windows paths
+      - path: (internal/netpolicy/netpolicy\.go|sdk/sdktest/sdktest\.go)
+        linters: [forbidigo] # the policy's own transport, and the fake that stands in for it
 
 formatters:
   enable:
