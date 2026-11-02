@@ -19,6 +19,7 @@ search, answer queries, and declare preferences, by implementing more interfaces
 | `sdk.Extension` (required) | `Manifest()` and `Commands(ctx)`: things to run by name | [system](../extensions/system/system.go) |
 | `sdk.ItemSource` | `Items(ctx)`: things to search through, as installed apps | [apps](../extensions/apps/apps.go) |
 | `sdk.Answerer` | `Answer(ctx, query)`: a direct answer above the results | [calculator](../extensions/calculator/calculator.go) |
+| `sdk.FallbackSource` | `Fallbacks(ctx, query)`: an offer when the root search finds nothing | [web](../extensions/web/web.go) |
 | `sdk.Configurable` | `Preferences(ctx)`: settings of its own | [example](../extensions/example/example.go) |
 
 ```go
@@ -177,8 +178,8 @@ command.
 
 ## Hotkeys
 
-Users can give any command a hotkey under **Command Hotkeys**, with nothing to do on your side.
-The binding is kept by the command's `ID`, so choose it once, as you do the extension's. The
+Users can give any command a hotkey or an alias under **Hotkeys and Aliases**, with nothing to do
+on your side. Both are kept by the command's `ID`, so choose it once, as you do the extension's. The
 command runs with the launcher hidden unless it pushes a view, so write `Run` to work from
 anywhere, and don't count on a toast being seen right away.
 

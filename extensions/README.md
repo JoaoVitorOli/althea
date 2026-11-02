@@ -24,6 +24,7 @@ Pick the shape by what the feature is:
 | does something by name | `Commands` | [system](system/system.go): Lock Screen, Restart |
 | contributes things to search through | `ItemSource` | [apps](apps/apps.go): every installed app |
 | answers what was typed | `Answerer` | [calculator](calculator/calculator.go): `2+2` |
+| offers something when nothing matches | `FallbackSource` | [web](web/web.go): search the web for it |
 | has settings of its own | `Configurable` | [example](example/example.go): the order of to-dos |
 
 An extension can be all of them. [scripts](scripts/scripts.go) turns the scripts folder into

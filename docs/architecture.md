@@ -140,10 +140,11 @@ When Althea writes settings itself, as the onboarding does, `config.Set` changes
 place, so the user's comments and ordering survive.
 
 Any command can have a hotkey, kept in `[hotkey.commands]` by the command's key,
-`"<extension>/<command>"`, and written by the **Command Hotkeys** command in Althea. Pressing one
+`"<extension>/<command>"`, and written by the **Hotkeys and Aliases** command in Althea, which keeps
+aliases the same way in `[aliases]`. Pressing a hotkey
 runs the command as it is at that moment with the launcher left hidden; the launcher shows only
 for a view the command pushes, a confirmation it asks or a preference it misses. A combination
-goes to one taker, the launcher's own hotkey first, and the rest are logged.
+goes to one taker, the launcher's own hotkey first, and the rest are logged; so does an alias.
 
 ## Storage
 

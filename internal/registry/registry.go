@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +36,7 @@ type Result struct {
 	Positions []int // matched letters of the title
 	Answer    bool  // an answer to the query, shown first
 	Command   bool  // one of an extension's commands, rather than an item
+	Fallback  bool  // offered because nothing matched the query
 }
 
 // Registry holds the extensions and what they offer. It is safe for concurrent use: Refresh
@@ -45,6 +48,9 @@ type Registry struct {
 	mu    sync.RWMutex
 	index *search.Index
 	items map[string]Result // by key
+	// candidates are what index was built from, and aliases what the user calls them, by key.
+	candidates []search.Candidate
+	aliases    map[string]string
 }
 
 // New returns a registry of extensions; call Refresh before the first query.
@@ -89,11 +95,29 @@ func (r *Registry) Refresh(ctx context.Context) error {
 			add(id, it, false)
 		}
 	}
-	index := search.NewIndex(candidates)
 	r.mu.Lock()
-	r.index, r.items = index, items
-	r.mu.Unlock()
+	defer r.mu.Unlock()
+	r.items, r.candidates = items, candidates
+	r.reindex()
 	return nil
+}
+
+// SetAliases changes what the user calls items, by key: typed exactly, an alias puts its item first.
+func (r *Registry) SetAliases(aliases map[string]string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.aliases = aliases
+	r.reindex()
+}
+
+// reindex builds the index of the candidates under their aliases. Called with mu held: built
+// outside it, an index could miss the aliases or the items set meanwhile.
+func (r *Registry) reindex() {
+	candidates := slices.Clone(r.candidates)
+	for i := range candidates {
+		candidates[i].Alias = r.aliases[candidates[i].ID]
+	}
+	r.index = search.NewIndex(candidates)
 }
 
 // commandItem turns a command into a row whose first action runs it.
@@ -141,7 +165,35 @@ func (r *Registry) Query(ctx context.Context, query string) []Result {
 		res.Positions = rk.Positions
 		results = append(results, res)
 	}
+	if len(results) == 0 {
+		return r.fallbacks(ctx, query)
+	}
 	return results
+}
+
+// fallbacks asks the extensions what they offer for a query nothing matched.
+func (r *Registry) fallbacks(ctx context.Context, query string) []Result {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil
+	}
+	var out []Result
+	for _, e := range r.exts {
+		src, ok := e.(sdk.FallbackSource)
+		if !ok {
+			continue
+		}
+		id := e.Manifest().ID
+		var items []sdk.Item
+		_ = r.guard(id, "fallbacks", func() error {
+			items = src.Fallbacks(r.deps.Context(ctx, id), query)
+			return nil
+		})
+		for _, it := range items {
+			out = append(out, Result{Key: id + "/" + it.ID, Extension: id, Item: it, Fallback: true})
+		}
+	}
+	return out
 }
 
 // answers asks every Answerer at once and keeps the answers that arrive in time, in the order

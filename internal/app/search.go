@@ -17,6 +17,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
+	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/prefs"
@@ -86,6 +87,11 @@ func (a *althea) setUpSearch() error {
 	})
 	a.search = s
 	settings.commands = s.registry.Commands
+	s.registry.SetAliases(wantedAliases(a.Settings().Aliases, a.log))
+	a.OnSettings(func(c config.Settings) {
+		s.registry.SetAliases(wantedAliases(c.Aliases, a.log))
+		a.launcher.Window().Update(func() { s.query(a.root.Query()) })
+	})
 	a.root.OnQuery = s.query
 	a.root.OnRun = s.run
 	a.root.Host = viewHost{a}
@@ -207,7 +213,7 @@ func (s *searcher) run(res registry.Result, action int) {
 	query := s.a.root.Query()
 	act := res.Item.Actions[action]
 	go func() {
-		if !res.Answer {
+		if !res.Answer && !res.Fallback {
 			if err := s.frecency.Record(context.Background(), res.Key, query); err != nil {
 				s.a.log.Warn("frecency", "err", err)
 			}

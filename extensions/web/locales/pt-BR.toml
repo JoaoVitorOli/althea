@@ -1,0 +1,3 @@
+engine = "Buscador"
+search_for = "Buscar \"{query}\" na web"
+open = "Buscar na web"

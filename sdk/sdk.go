@@ -59,6 +59,13 @@ type Answerer interface {
 	Answer(ctx Context, query string) (*Item, error)
 }
 
+// FallbackSource is an extension with something to offer when the root search finds nothing, as
+// searching the web for what was typed. Its items show in the order of the extensions. It must
+// return at once, doing nothing until the user picks an item.
+type FallbackSource interface {
+	Fallbacks(ctx Context, query string) []Item
+}
+
 // Item is a result in the root search.
 type Item struct {
 	ID       string // unique within the extension

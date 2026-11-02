@@ -146,6 +146,10 @@ func isSeparator(r rune) bool {
 	return false
 }
 
+// Folded returns text as the search compares it, so that others can tell whether two aliases are
+// the same to it.
+func Folded(s string) string { return string(fold(s)) }
+
 // fold lowers each rune and strips its accents, one rune for one, so that positions in the
 // folded text are positions in the original.
 func fold(s string) []rune {

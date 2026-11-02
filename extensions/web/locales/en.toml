@@ -1,0 +1,3 @@
+engine = "Search engine"
+search_for = "Search the web for \"{query}\""
+open = "Search the Web"

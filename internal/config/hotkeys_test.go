@@ -58,3 +58,27 @@ func TestSetPathAddsCommandHotkeysThatLoadBack(t *testing.T) {
 		t.Errorf("hotkeys = %+v, want commands %v", s.Hotkey, want)
 	}
 }
+
+func TestLoadReadsAliasesAndReportsWrongOnes(t *testing.T) {
+	path := write(t, `[aliases]
+"althea.clipboard/history" = " cl "
+"althea.system/lock" = "two words"
+"althea.system/sleep" = 3
+`)
+	s, problems, err := config.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{"althea.clipboard/history": "cl"}
+	if !maps.Equal(s.Aliases, want) {
+		t.Errorf("aliases = %v, want %v", s.Aliases, want)
+	}
+	const message = `must be one word, such as "cl"`
+	wantProblems := []config.Problem{
+		{Line: 3, Key: "aliases.althea.system/lock", Message: message},
+		{Line: 4, Key: "aliases.althea.system/sleep", Message: message},
+	}
+	if !slices.Equal(problems, wantProblems) {
+		t.Errorf("problems = %v, want %v", problems, wantProblems)
+	}
+}

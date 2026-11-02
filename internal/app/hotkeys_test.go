@@ -178,7 +178,7 @@ func TestHotkeyFormWritesTheSettingsAndShowsThemAtOnce(t *testing.T) {
 	ctx := sdktest.New(t, s, "pt-BR")
 
 	cmds := s.Commands(ctx)
-	if len(cmds) != 1 || cmds[0].ID != "command-hotkeys" || cmds[0].Title != "Atalhos de comandos" {
+	if len(cmds) != 1 || cmds[0].ID != "command-hotkeys" || cmds[0].Title != "Atalhos e aliases" {
 		t.Fatalf("commands %+v", cmds)
 	}
 	if err := cmds[0].Run(ctx); err != nil {
@@ -201,11 +201,11 @@ func TestHotkeyFormWritesTheSettingsAndShowsThemAtOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	form := ctx.Pushed[1].(*sdk.Form)
-	if err := form.Submit(ctx, sdk.Values{"hotkey": "alt+ctrl+left"}); err != nil {
+	if err := form.Submit(ctx, sdk.Values{"hotkey": "alt+ctrl+left", "alias": " esq "}); err != nil {
 		t.Fatal(err)
 	}
 	data, _ := os.ReadFile(s.prefs.path)
-	for _, want := range []string{"# mine", "[hotkey.commands]", `"althea.windows/left" = "Ctrl+Alt+Left"`} {
+	for _, want := range []string{"# mine", "[hotkey.commands]", `"althea.windows/left" = "Ctrl+Alt+Left"`, "[aliases]", `"althea.windows/left" = "esq"`} {
 		if !strings.Contains(string(data), want) {
 			t.Errorf("settings lack %q:\n%s", want, data)
 		}
@@ -218,20 +218,62 @@ func TestHotkeyFormWritesTheSettingsAndShowsThemAtOnce(t *testing.T) {
 	// watcher reports it.
 	list = ctx.Pushed[2].(*sdk.List)
 	left = list.Items[1]
-	if ctx.Popped != 2 || left.Accessory != "Ctrl+Alt+Left" || len(left.Actions) != 2 {
+	if ctx.Popped != 2 || left.Accessory != "esq · Ctrl+Alt+Left" || len(left.Actions) != 2 {
 		t.Fatalf("popped %d, item %+v", ctx.Popped, left)
 	}
 
-	// Removing it leaves the file without it.
+	// Removing the hotkey leaves the file without it, and with the alias.
 	if err := left.Actions[1].Run(ctx); err != nil {
 		t.Fatal(err)
 	}
 	data, _ = os.ReadFile(s.prefs.path)
-	if strings.Contains(string(data), "althea.windows/left") {
-		t.Errorf("still in the settings:\n%s", data)
+	if strings.Contains(string(data), "Ctrl+Alt+Left") || !strings.Contains(string(data), "esq") {
+		t.Errorf("settings after removing the hotkey:\n%s", data)
 	}
-	if got := ctx.Pushed[3].(*sdk.List).Items[1].Accessory; got != "" {
-		t.Errorf("accessory %q after removing", got)
+	left = ctx.Pushed[3].(*sdk.List).Items[1]
+	if left.Accessory != "esq" || len(left.Actions) != 1 {
+		t.Errorf("item after removing the hotkey: %+v", left)
+	}
+
+	// An emptied field removes the alias.
+	if err := s.hotkeyForm(ctx, registry.Result{Key: "althea.windows/left"}).Submit(ctx, sdk.Values{"hotkey": "", "alias": ""}); err != nil {
+		t.Fatal(err)
+	}
+	data, _ = os.ReadFile(s.prefs.path)
+	if strings.Contains(string(data), "esq") {
+		t.Errorf("alias still in the settings:\n%s", data)
+	}
+}
+
+func TestWantedAliasesGiveEachOneToOneCommand(t *testing.T) {
+	var logged bytes.Buffer
+	got := wantedAliases(map[string]string{"b/two": "CAFÉ", "a/one": "cafe", "c/three": "cl"}, slog.New(slog.NewTextHandler(&logged, nil)))
+	want := map[string]string{"a/one": "cafe", "c/three": "cl"}
+	if !maps.Equal(got, want) {
+		t.Errorf("wanted %v, want %v", got, want)
+	}
+	if !strings.Contains(logged.String(), "command=b/two taken_by=a/one") {
+		t.Errorf("not logged:\n%s", logged.String())
+	}
+}
+
+func TestAliasFieldTellsWhatIsWrong(t *testing.T) {
+	s := hotkeySettings(t, "[aliases]\n\"althea.calculator/calc\" = \"ca\"\n\"althea.windows/left\" = \"esq\"\n")
+	ctx := sdktest.New(t, s, "en")
+	field := s.hotkeyForm(ctx, registry.Result{Key: "althea.windows/left", Item: sdk.Item{Title: "Left Half"}}).Fields[1]
+	if field.Default != "esq" {
+		t.Errorf("starts with %q", field.Default)
+	}
+	for _, tc := range []struct{ text, want string }{
+		{"", ""},
+		{"esq", ""}, // its own
+		{"le", ""},
+		{"two words", "Must be one word, as cl."},
+		{"CÁ", "Already used by Calculator."},
+	} {
+		if got := field.Validate(tc.text); got != tc.want {
+			t.Errorf("Validate(%q) = %q, want %q", tc.text, got, tc.want)
+		}
 	}
 }
 

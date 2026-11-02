@@ -107,13 +107,37 @@ func (e *Extension) Commands(ctx sdk.Context) []sdk.Command {
 		Keywords: []string{"files", "find", "folder", "arquivos", "procurar", "pasta", "documentos"},
 		Run: func(ctx sdk.Context) error {
 			ctx.Push(&sdk.List{
-				Title: ctx.T("title"), Placeholder: ctx.T("search"),
-				Empty:  sdk.Empty{Title: ctx.T("empty"), Description: ctx.T("empty_hint"), Icon: sdk.Icon{Glyph: "folder"}},
-				Search: e.search,
+				Title: ctx.T("title"), Placeholder: ctx.T("search"), Empty: e.empty(ctx), Search: e.search,
 			})
 			return nil
 		},
 	}}
+}
+
+// Fallbacks implements sdk.FallbackSource.
+func (e *Extension) Fallbacks(ctx sdk.Context, query string) []sdk.Item {
+	return []sdk.Item{{
+		ID: "search", Title: ctx.T("fallback", "query", query), Icon: sdk.Icon{Glyph: "folder"},
+		Actions: []sdk.Action{{Title: ctx.T("title"), Run: func(ctx sdk.Context) error {
+			// The search field stays empty, with the query in its place, until the user types
+			// another: what is typed replaces the query rather than adding to it.
+			ctx.Push(&sdk.List{
+				Title: ctx.T("title"), Placeholder: query, Empty: e.empty(ctx),
+				Search: func(ctx sdk.Context, typed string) ([]sdk.Item, error) {
+					if typed == "" {
+						typed = query
+					}
+					return e.search(ctx, typed)
+				},
+			})
+			return nil
+		}}},
+	}}
+}
+
+// empty is what a search that finds no file shows.
+func (*Extension) empty(ctx sdk.Context) sdk.Empty {
+	return sdk.Empty{Title: ctx.T("empty"), Description: ctx.T("empty_hint"), Icon: sdk.Icon{Glyph: "folder"}}
 }
 
 // shown is how many files a search shows.

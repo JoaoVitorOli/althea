@@ -4,6 +4,8 @@ empty = "No files found"
 empty_hint = "File Search covers the folders in its preferences; new files appear as they are made."
 copied = "Copied"
 
+fallback = "Search files for \"{query}\""
+
 [action]
 open = "Open"
 reveal = "Show in Folder"

@@ -177,3 +177,28 @@ func TestItemsOpenRevealAndCopy(t *testing.T) {
 		t.Errorf("opened %q, revealed %q, copied %q, clips %+v", ctx.Opened, revealed, ctx.Copied, ctx.Clips)
 	}
 }
+
+func TestFallbackSearchesFilesForTheQuery(t *testing.T) {
+	dir := t.TempDir()
+	touch(t, filepath.Join(dir, "report.txt"), time.Hour)
+	touch(t, filepath.Join(dir, "notes.txt"), time.Minute)
+	ctx, _ := indexed(t, dir)
+
+	items := files.New(files.Platform{}).Fallbacks(ctx, "report")
+	if len(items) != 1 || items[0].Title != `Search files for "report"` {
+		t.Fatalf("items %+v", items)
+	}
+	if err := items[0].Actions[0].Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	list := ctx.Pushed[0].(*sdk.List)
+	if list.Placeholder != "report" {
+		t.Errorf("placeholder %q", list.Placeholder)
+	}
+	for typed, want := range map[string]string{"": "report.txt", "notes": "notes.txt"} {
+		got, err := list.Search(ctx, typed)
+		if err != nil || len(got) != 1 || got[0].Title != want {
+			t.Errorf("Search(%q) = %+v, %v; want %s", typed, got, err, want)
+		}
+	}
+}

@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/hotkey"
 	"github.com/JoaoVitorOli/althea/internal/registry"
+	"github.com/JoaoVitorOli/althea/internal/search"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
@@ -38,6 +39,23 @@ func wantedHotkeys(s config.Hotkey, log *slog.Logger) map[string]string {
 		}
 		taken[b.Accelerator] = command
 		want[command] = b.Accelerator
+	}
+	return want
+}
+
+// wantedAliases returns the aliases the search takes, by the command's key. An alias goes to the
+// first command by key, the same one each time; the others are logged.
+func wantedAliases(aliases map[string]string, log *slog.Logger) map[string]string {
+	want := map[string]string{}
+	taken := map[string]string{}
+	for _, command := range slices.Sorted(maps.Keys(aliases)) {
+		folded := search.Folded(aliases[command])
+		if other, ok := taken[folded]; ok {
+			log.Warn("alias conflict", "alias", aliases[command], "command", command, "taken_by", other)
+			continue
+		}
+		taken[folded] = command
+		want[command] = aliases[command]
 	}
 	return want
 }
@@ -178,19 +196,19 @@ func titles(exts []sdk.Extension) map[string]string {
 	return out
 }
 
-// savedHotkeys reads the hotkeys from the file, which holds a change before the watcher reports
-// it. A file that cannot be read has none to show: the watcher logs what is wrong with it.
-func (s *settingsExtension) savedHotkeys() config.Hotkey {
+// saved reads the settings from the file, which holds a change before the watcher reports it. A
+// file that cannot be read has nothing to show: the watcher logs what is wrong with it.
+func (s *settingsExtension) saved() config.Settings {
 	settings, _, err := config.Load(s.prefs.path)
 	if err != nil {
-		return config.Hotkey{}
+		return config.Settings{}
 	}
-	return settings.Hotkey
+	return settings
 }
 
-// hotkeyList lists every command with its hotkey, by extension.
+// hotkeyList lists every command with its alias and hotkey, by extension.
 func (s *settingsExtension) hotkeyList(ctx sdk.Context) *sdk.List {
-	saved := s.savedHotkeys()
+	saved := s.saved()
 	commands := s.commands()
 	slices.SortFunc(commands, func(a, b registry.Result) int {
 		return cmp.Or(cmp.Compare(s.titles[a.Extension], s.titles[b.Extension]), cmp.Compare(a.Item.Title, b.Item.Title))
@@ -199,13 +217,15 @@ func (s *settingsExtension) hotkeyList(ctx sdk.Context) *sdk.List {
 	for _, res := range commands {
 		item := sdk.Item{
 			ID: res.Key, Title: res.Item.Title, Subtitle: res.Item.Subtitle, Icon: res.Item.Icon,
-			Keywords: res.Item.Keywords, Section: s.titles[res.Extension], Accessory: saved.Commands[res.Key],
+			Keywords: res.Item.Keywords, Section: s.titles[res.Extension],
+			Accessory: strings.Join(slices.DeleteFunc([]string{saved.Aliases[res.Key], saved.Hotkey.Commands[res.Key]},
+				func(v string) bool { return v == "" }), " · "),
 			Actions: []sdk.Action{{Title: ctx.T("hotkeys.set"), Run: func(ctx sdk.Context) error {
 				ctx.Push(s.hotkeyForm(ctx, res))
 				return nil
 			}}},
 		}
-		if item.Accessory != "" {
+		if saved.Hotkey.Commands[res.Key] != "" {
 			item.Actions = append(item.Actions, sdk.Action{Title: ctx.T("hotkeys.remove"), Run: func(ctx sdk.Context) error {
 				if err := s.saveHotkey(res.Key, ""); err != nil {
 					return fmt.Errorf("%s: %w", ctx.T("hotkeys.not_saved"), err)
@@ -220,19 +240,30 @@ func (s *settingsExtension) hotkeyList(ctx sdk.Context) *sdk.List {
 	return &sdk.List{Title: ctx.T("hotkeys.title"), Placeholder: ctx.T("hotkeys.search"), Items: items}
 }
 
-// hotkeyForm asks for the hotkey of a command, which an empty field removes. It takes the place
-// of the list under it, so that the list shows the new hotkey.
+// hotkeyForm asks for the hotkey and the alias of a command, which an empty field removes. It
+// takes the place of the list under it, so that the list shows them.
 func (s *settingsExtension) hotkeyForm(ctx sdk.Context, res registry.Result) *sdk.Form {
-	saved := s.savedHotkeys()
+	saved := s.saved()
 	return &sdk.Form{
 		Title: ctx.T("hotkeys.form_title", "command", res.Item.Title), SubmitTitle: ctx.T("preferences.save"),
 		Fields: []sdk.Field{{
 			ID: "hotkey", Title: ctx.T("hotkeys.field"), Info: ctx.T("hotkeys.info"), Placeholder: "Ctrl+Alt+K",
-			Default:  saved.Commands[res.Key],
-			Validate: func(v string) string { return s.hotkeyProblem(ctx, saved, res.Key, v) },
+			Default:  saved.Hotkey.Commands[res.Key],
+			Validate: func(v string) string { return s.hotkeyProblem(ctx, saved.Hotkey, res.Key, v) },
+		}, {
+			ID: "alias", Title: ctx.T("hotkeys.alias"), Info: ctx.T("hotkeys.alias_info"), Placeholder: "cl",
+			Default:  saved.Aliases[res.Key],
+			Validate: func(v string) string { return s.aliasProblem(ctx, saved.Aliases, res.Key, v) },
 		}},
 		Submit: func(ctx sdk.Context, v sdk.Values) error {
-			if err := s.saveHotkey(res.Key, v["hotkey"]); err != nil {
+			var errs []error
+			if v["hotkey"] != saved.Hotkey.Commands[res.Key] {
+				errs = append(errs, s.saveHotkey(res.Key, v["hotkey"]))
+			}
+			if v["alias"] != saved.Aliases[res.Key] {
+				errs = append(errs, s.saveAlias(res.Key, v["alias"]))
+			}
+			if err := errors.Join(errs...); err != nil {
 				return fmt.Errorf("%s: %w", ctx.T("hotkeys.not_saved"), err)
 			}
 			ctx.Pop() // the form
@@ -261,6 +292,32 @@ func (s *settingsExtension) hotkeyProblem(ctx sdk.Context, saved config.Hotkey, 
 		}
 	}
 	return ""
+}
+
+// aliasProblem says what is wrong with an alias typed for a command, or "" when it can be had.
+func (s *settingsExtension) aliasProblem(ctx sdk.Context, saved map[string]string, command, text string) string {
+	if strings.TrimSpace(text) == "" {
+		return ""
+	}
+	if len(strings.Fields(text)) != 1 {
+		return ctx.T("hotkeys.alias_invalid")
+	}
+	for other, alias := range saved {
+		if other != command && search.Folded(alias) == search.Folded(text) {
+			return ctx.T("hotkeys.taken", "command", s.commandTitle(other))
+		}
+	}
+	return ""
+}
+
+// saveAlias writes the alias of a command to settings.toml, or removes it when empty; the watcher
+// then gives it to the search.
+func (s *settingsExtension) saveAlias(command, text string) error {
+	key := []string{"aliases", command}
+	if text = strings.TrimSpace(text); text == "" {
+		return config.Unset(s.prefs.path, key)
+	}
+	return config.SetPath(s.prefs.path, key, text)
 }
 
 // commandTitle names a command by its key, which is all that is known of one no longer offered.

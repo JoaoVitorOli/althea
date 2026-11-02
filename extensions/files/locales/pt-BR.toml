@@ -3,6 +3,7 @@ search = "Buscar arquivos pelo nome…"
 empty = "Nenhum arquivo encontrado"
 empty_hint = "A busca cobre as pastas das preferências; arquivos novos aparecem assim que são criados."
 copied = "Copiado"
+fallback = "Buscar \"{query}\" nos arquivos"
 
 [action]
 open = "Abrir"

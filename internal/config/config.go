@@ -27,6 +27,8 @@ type Settings struct {
 	Theme   Theme   `toml:"theme"`
 	Hotkey  Hotkey  `toml:"hotkey"`
 	Window  Window  `toml:"window"`
+	// Aliases are what the user types to find a command, by its key, "<extension>/<command>".
+	Aliases map[string]string `toml:"aliases"`
 	// Extensions are the [extensions."<id>"] tables, by extension ID, unchecked: only the
 	// extension knows its preferences (see internal/prefs).
 	Extensions map[string]map[string]any `toml:"extensions"`
@@ -134,6 +136,7 @@ type file struct {
 	Window struct {
 		ResetAfter *string `toml:"reset_after"`
 	} `toml:"window"`
+	Aliases    map[string]any            `toml:"aliases"`
 	Extensions map[string]map[string]any `toml:"extensions"`
 }
 
@@ -212,6 +215,18 @@ func parse(data []byte) (Settings, []Problem, error) {
 			s.Hotkey.Commands = map[string]string{}
 		}
 		s.Hotkey.Commands[command] = text
+	}
+	for _, command := range slices.Sorted(maps.Keys(f.Aliases)) {
+		text, _ := f.Aliases[command].(string)
+		words := strings.Fields(text)
+		if len(words) != 1 {
+			invalid("aliases."+command, `must be one word, such as "cl"`)
+			continue
+		}
+		if s.Aliases == nil {
+			s.Aliases = map[string]string{}
+		}
+		s.Aliases[command] = words[0]
 	}
 	if text := f.Window.ResetAfter; text != nil {
 		d, err := time.ParseDuration(*text)
