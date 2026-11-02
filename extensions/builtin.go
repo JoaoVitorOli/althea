@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
+	"github.com/JoaoVitorOli/althea/extensions/translator"
 	"github.com/JoaoVitorOli/althea/extensions/web"
 	"github.com/JoaoVitorOli/althea/extensions/windows"
 	"github.com/JoaoVitorOli/althea/sdk"
@@ -20,18 +21,28 @@ import (
 
 // Platforms are what the built-in extensions need from the system; the host provides them.
 type Platforms struct {
-	Apps      apps.Platform
-	System    system.Platform
-	Scripts   scripts.Platform
-	Snippets  snippets.Platform
-	Clipboard clipboard.Platform
-	Files     files.Platform
-	Windows   windows.Platform
-	AI        ai.Platform
+	Apps       apps.Platform
+	System     system.Platform
+	Scripts    scripts.Platform
+	Snippets   snippets.Platform
+	Clipboard  clipboard.Platform
+	Files      files.Platform
+	Windows    windows.Platform
+	AI         ai.Platform
+	Translator translator.Platform
+	// AsExtension gives a Context of something being done the identity of another extension, for
+	// one built-in to reach another's preferences, as the Translator does the AI provider's.
+	AsExtension func(ctx sdk.Context, ext string) sdk.Context
 }
 
 // Builtin returns the built-in extensions, in the order their answers and fallbacks show.
 func Builtin(p Platforms) []sdk.Extension {
+	intelligence := ai.New(p.AI)
+	p.Translator.AI = func(ctx sdk.Context, system, text string, show func(string)) (string, error) {
+		return intelligence.Complete(p.AsExtension(ctx, ai.ID), ai.Request{
+			System: system, Messages: []ai.Message{{Text: text}},
+		}, show)
+	}
 	return []sdk.Extension{
 		calculator.New(),
 		apps.New(p.Apps),
@@ -41,7 +52,8 @@ func Builtin(p Platforms) []sdk.Extension {
 		snippets.New(p.Snippets),
 		clipboard.New(p.Clipboard),
 		web.New(),
-		ai.New(p.AI),
+		intelligence,
+		translator.New(p.Translator),
 		files.New(p.Files),
 		emoji.New(),
 		windows.New(p.Windows),

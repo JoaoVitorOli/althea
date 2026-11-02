@@ -133,4 +133,39 @@ func TestSnapshotViews(t *testing.T) {
 		{ID: "pin", Title: "Fixar", Kind: sdk.Checkbox, Placeholder: "Mostrar no topo"},
 	}})
 	shot("empty", &sdk.List{Empty: sdk.Empty{Title: "Nenhum snippet", Description: "Crie um com Ctrl+N.", Icon: sdk.Icon{Glyph: "document"}}})
+	r.Host = &syncHost{t: t, r: r}
+	shot("chat", &sdk.Chat{
+		Title: "Por que o céu é azul?", Placeholder: "Pergunte o que quiser…",
+		Messages: []sdk.ChatMessage{
+			{Mine: true, Text: "Por que o céu é azul?"},
+			{Text: "Por causa do **espalhamento de Rayleigh**: a luz azul se espalha mais.\n\n- Comprimento de onda menor\n- Mais espalhamento"},
+		},
+		First: "E o pôr do sol?",
+		Send: func(_ sdk.Context, _ string, show func(string)) error {
+			show("A luz atravessa mais atmosfera, e **sobra o vermelho**.")
+			return nil
+		},
+		Actions: acts,
+	})
+	shot("streamed", &sdk.Detail{
+		Title:    "Inglês → Português",
+		Metadata: []sdk.Metadata{{Label: "De", Text: "Inglês (detectado)"}, {Label: "Para", Text: "Português"}},
+		Stream: func(_ sdk.Context, show func(string)) error {
+			show("Bom dia, como vai você?")
+			return nil
+		},
+		Actions: acts,
+	})
+	r.Reset()
+	tt.Frame()
+	_ = tt.Click("Buscar")
+	tt.Type("por que o céu é azul")
+	r.SetResults("por que o céu é azul", []registry.Result{{Key: "a", Fallback: true, Item: sdk.Item{
+		Title: `Perguntar à IA: "por que o céu é azul"`, Icon: sdk.Icon{Glyph: "sparkles"}, Actions: acts,
+	}}, {Key: "b", Fallback: true, Item: sdk.Item{
+		Title: `Traduzir "por que o céu é azul"`, Icon: sdk.Icon{Glyph: "translate"}, Actions: acts,
+	}}})
+	r.SetTake("por que o céu é azul", "Perguntar à IA")
+	tt.Frame()
+	save(t, tt, "root-take")
 }

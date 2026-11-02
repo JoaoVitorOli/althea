@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
 	"github.com/JoaoVitorOli/althea/extensions/system"
+	"github.com/JoaoVitorOli/althea/extensions/translator"
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
 	"github.com/JoaoVitorOli/althea/internal/netpolicy"
@@ -61,8 +63,10 @@ func (a *althea) setUpSearch() error {
 			Folders: a.services.KnownFolders, Watch: a.services.WatchTree,
 			Reveal: func(path string) error { mygo.Shell.ShowItemInFolder(path); return nil },
 		},
-		Windows: a.windowsPlatform(),
-		AI:      ai.Platform{CommandsDir: a.paths.Commands},
+		Windows:     a.windowsPlatform(),
+		AI:          ai.Platform{CommandsDir: a.paths.Commands},
+		Translator:  translator.Platform{Dir: filepath.Join(a.paths.Data, "translator"), Command: a.services.Command},
+		AsExtension: func(ctx sdk.Context, ext string) sdk.Context { return a.extensionContext(ctx, ext) },
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {
