@@ -32,6 +32,8 @@ type Platform struct {
 // Extension is the File Search extension.
 type Extension struct {
 	p Platform
+	// Scanned, when set, hears that the first scan ended, for testing.
+	Scanned func()
 	// Now is the clock.
 	Now func() time.Time
 }
@@ -93,11 +95,17 @@ func (e *Extension) indexer(ctx sdk.Context) *indexer {
 func (e *Extension) Serve(ctx sdk.Context) error {
 	x := e.indexer(ctx)
 	start := time.Now()
+	// Watching first: what changes while the folders are read is heard, and comes after the scan.
+	stop := x.watch()
+	defer stop()
 	if err := x.scan(); err != nil {
 		return err
 	}
 	ctx.Log().Info("files indexed", "folders", len(x.roots), "took", time.Since(start))
-	return x.watch()
+	if e.Scanned != nil {
+		e.Scanned()
+	}
+	return x.follow()
 }
 
 // Commands implements sdk.Extension.

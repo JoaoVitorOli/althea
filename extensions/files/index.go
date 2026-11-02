@@ -17,6 +17,10 @@ const batch = 2000
 // indexer keeps the index in step with the folders: a full scan as it starts, then the changes
 // the watcher hears.
 type indexer struct {
+	// changes are what the watchers heard, for follow; lost says some did not fit.
+	changes chan string
+	lost    chan struct{}
+
 	e       *Extension
 	ctx     sdk.Context
 	roots   []string
@@ -190,13 +194,13 @@ func escapeLike(s string) string {
 // makes many changes.
 const settle = 300 * time.Millisecond
 
-// watch keeps the index in step with each folder until ctx is done.
-func (x *indexer) watch() error {
+// watch starts hearing the changes of each folder, for follow, and returns what stops it.
+func (x *indexer) watch() (stop func()) {
+	x.changes = make(chan string, 1024)
+	x.lost = make(chan struct{}, 1)
 	if x.e.p.Watch == nil {
-		<-x.ctx.Done()
-		return nil
+		return func() {}
 	}
-	changes := make(chan string, 1024)
 	var stops []func()
 	for _, root := range x.roots {
 		stop, err := x.e.p.Watch(root, func(path string) {
@@ -204,8 +208,13 @@ func (x *indexer) watch() error {
 				path = root // changes were lost: read the folder again
 			}
 			select {
-			case changes <- path:
+			case x.changes <- path:
 			default:
+				// More than fit at once, as while the scan holds them: read everything again.
+				select {
+				case x.lost <- struct{}{}:
+				default:
+				}
 			}
 		})
 		if err != nil {
@@ -214,11 +223,15 @@ func (x *indexer) watch() error {
 		}
 		stops = append(stops, stop)
 	}
-	defer func() {
+	return func() {
 		for _, stop := range stops {
 			stop()
 		}
-	}()
+	}
+}
+
+// follow keeps the index in step with what watch hears until ctx is done.
+func (x *indexer) follow() error {
 	pending := map[string]bool{}
 	timer := time.NewTimer(time.Hour)
 	timer.Stop()
@@ -226,8 +239,13 @@ func (x *indexer) watch() error {
 		select {
 		case <-x.ctx.Done():
 			return nil
-		case p := <-changes:
+		case p := <-x.changes:
 			pending[p] = true
+			timer.Reset(settle)
+		case <-x.lost:
+			for _, root := range x.roots {
+				pending[root] = true
+			}
 			timer.Reset(settle)
 		case <-timer.C:
 			rescan := false

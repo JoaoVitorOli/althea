@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -63,6 +64,8 @@ func indexed(t *testing.T, dir string) (*sdktest.Context, *watcher) {
 	t.Helper()
 	w := &watcher{changed: map[string]func(string){}}
 	e := files.New(files.Platform{Folders: func() []string { return []string{dir} }, Watch: w.watch})
+	scanned := make(chan struct{})
+	e.Scanned = func() { close(scanned) }
 	ctx := sdktest.New(t, e, "en")
 	c, cancel := context.WithCancel(context.Background())
 	ctx.Context = c
@@ -74,7 +77,11 @@ func indexed(t *testing.T, dir string) (*sdktest.Context, *watcher) {
 			t.Error(err)
 		}
 	})
-	w.tell(t, dir, "x-never") // the watcher starts after the scan
+	select {
+	case <-scanned:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the scan did not end")
+	}
 	return ctx, w
 }
 
@@ -201,4 +208,95 @@ func TestFallbackSearchesFilesForTheQuery(t *testing.T) {
 			t.Errorf("Search(%q) = %+v, %v; want %s", typed, got, err, want)
 		}
 	}
+}
+
+// serve starts the service with a watcher of its own, stopped as the test ends.
+func serve(t *testing.T, e *files.Extension) *sdktest.Context {
+	t.Helper()
+	ctx := sdktest.New(t, e, "en")
+	c, cancel := context.WithCancel(context.Background())
+	ctx.Context = c
+	done := make(chan error)
+	go func() { done <- e.Serve(ctx) }()
+	t.Cleanup(func() {
+		cancel()
+		if err := <-done; err != nil {
+			t.Error(err)
+		}
+	})
+	return ctx
+}
+
+func eventually(t *testing.T, ctx *sdktest.Context, q, want string) {
+	t.Helper()
+	var got string
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(20 * time.Millisecond) {
+		if got = find(t, ctx, q); got == want {
+			return
+		}
+	}
+	t.Errorf("%s: %q, want %q", q, got, want)
+}
+
+// Nothing may fall between the scan and the watch, so watching comes first: a file made as watching
+// starts, of which no change is told, is there for the scan that follows to find.
+func TestWatchingStartsBeforeTheScan(t *testing.T) {
+	dir := t.TempDir()
+	e := files.New(files.Platform{
+		Folders: func() []string { return []string{dir} },
+		Watch: func(string, func(string)) (func(), error) {
+			touch(t, filepath.Join(dir, "made-as-watching-starts.txt"), 0)
+			return func() {}, nil
+		},
+	})
+	scanned := make(chan struct{})
+	e.Scanned = func() { close(scanned) }
+	ctx := serve(t, e)
+	select {
+	case <-scanned:
+	case <-time.After(10 * time.Second):
+		t.Fatal("the scan did not end")
+	}
+	if got := find(t, ctx, "made-as"); got != "made-as-watching-starts.txt" {
+		t.Errorf("found %q", got)
+	}
+}
+
+// What is heard during the scan comes after it, for changes the scan had already gone past.
+func TestChangesHeardDuringTheScanReachTheIndex(t *testing.T) {
+	dir := t.TempDir()
+	made := filepath.Join(dir, "made-during-scan.txt")
+	var tell func(string)
+	e := files.New(files.Platform{
+		Folders: func() []string { return []string{dir} },
+		Watch: func(_ string, changed func(string)) (func(), error) {
+			tell = changed
+			return func() {}, nil
+		},
+	})
+	e.Scanned = func() {
+		touch(t, made, 0)
+		tell(made)
+	}
+	eventually(t, serve(t, e), "made-during", "made-during-scan.txt")
+}
+
+// More changes than fit are not forgotten: everything is read again.
+func TestChangesThatDoNotFitReadTheFolderAgain(t *testing.T) {
+	dir := t.TempDir()
+	var tell func(string)
+	e := files.New(files.Platform{
+		Folders: func() []string { return []string{dir} },
+		Watch: func(_ string, changed func(string)) (func(), error) {
+			tell = changed
+			return func() {}, nil
+		},
+	})
+	e.Scanned = func() {
+		touch(t, filepath.Join(dir, "lost-among-many.txt"), 0)
+		for i := range 5000 { // before anything reads them
+			tell(filepath.Join(dir, "noise", strconv.Itoa(i)))
+		}
+	}
+	eventually(t, serve(t, e), "lost-among", "lost-among-many.txt")
 }
