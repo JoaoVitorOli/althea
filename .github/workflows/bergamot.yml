@@ -1,0 +1,130 @@
+# Builds the Translator's offline engine: bergamot-translator with tools/bergamot/main.cpp as its
+# program, proves it translates, and publishes it on a release. Run it by hand; then pin the size and
+# sha256 the run prints in extensions/translator/engine.json. See docs/adr/0010-translator.md.
+name: Bergamot engine
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: The commit of browsermt/bergamot-translator to build
+        default: 9271618ebbdc5d21ac4dc4df9e72beb7ce644774
+      publish:
+        description: Publish it on a release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: browsermt/bergamot-translator
+          ref: ${{ inputs.ref }}
+          path: engine
+          submodules: recursive
+
+      - name: Use Althea's program in place of the upstream one
+        run: cp tools/bergamot/main.cpp engine/app/bergamot.cpp
+
+      - name: Install dependencies
+        shell: powershell
+        working-directory: C:\vcpkg
+        run: |
+          $Env:VCPKG_DEFAULT_TRIPLET = 'x64-windows-static'
+          .\vcpkg install openblas:x64-windows-static pcre2:x64-windows-static protobuf:x64-windows-static
+
+      # OpenBLAS rather than upstream's MKL, whose license does not sit well with GPL-3.0.
+      - name: Configure
+        shell: powershell
+        run: |
+          cmake -S engine -B engine/build -DCMAKE_BUILD_TYPE=Release -DUSE_STATIC_LIBS=ON `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static `
+            -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DUSE_MKL=OFF -DUSE_FBGEMM=OFF
+
+      - name: Build
+        run: cmake --build engine/build --config Release --target bergamot -j4
+
+      # Every file is checked against the pins, as the app does.
+      - name: Prove it translates
+        run: |
+          mkdir -p smoke/en-pt
+          jq -r '.[] | select(.from == "en" and .to == "pt") | .files[] | "\(.role) \(.url) \(.sha256)"' \
+            extensions/translator/models.json > files.txt
+          while read -r role url sum; do
+            case "$role" in model) name=model.bin ;; lex) name=lex.bin ;; vocab) name=vocab.spm ;; esac
+            curl -fsSL -o "smoke/en-pt/$name" "$url"
+            echo "$sum smoke/en-pt/$name" | sha256sum -c -
+          done < files.txt
+          # As modelConfig in extensions/translator/install.go.
+          cat > smoke/en-pt/config.yml <<'CONFIG'
+          models:
+            - en-pt/model.bin
+          vocabs:
+            - en-pt/vocab.spm
+            - en-pt/vocab.spm
+          shortlist:
+            - en-pt/lex.bin
+            - false
+          beam-size: 1
+          normalize: 1.0
+          word-penalty: 0
+          max-length-break: 128
+          mini-batch-words: 1024
+          workspace: 128
+          max-length-factor: 2.0
+          skip-cost: true
+          cpu-threads: 0
+          quiet: true
+          quiet-translation: true
+          gemm-precision: int8shiftAlphaAll
+          alignment: soft
+          CONFIG
+          cd smoke
+          printf 'en-pt 11\nHello world' | ../engine/build/app/Release/bergamot.exe | tee out.txt
+          grep -q '^ok ' out.txt
+
+      - name: Say what to pin
+        id: pin
+        run: |
+          exe=engine/build/app/Release/bergamot.exe
+          size=$(stat -c %s "$exe")
+          sum=$(sha256sum "$exe" | cut -d' ' -f1)
+          tag="bergamot-${INPUT_REF:0:12}"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/bergamot.exe"
+          {
+            echo '### Pin this in `extensions/translator/engine.json`'
+            echo '```json'
+            echo "{\"windows/amd64\": {\"url\": \"$url\", \"size\": $size, \"sha256\": \"$sum\"}}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bergamot-windows-x64
+          path: engine/build/app/Release/bergamot.exe
+
+      - name: Publish
+        if: ${{ inputs.publish }}
+        run: |
+          cp engine/build/app/Release/bergamot.exe bergamot.exe
+          gh release create "$TAG" bergamot.exe --prerelease --title "Bergamot engine $TAG" \
+            --notes "The Translator's offline engine: bergamot-translator at ${{ inputs.ref }} with tools/bergamot/main.cpp. Licensed MPL-2.0."
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pin.outputs.tag }}
