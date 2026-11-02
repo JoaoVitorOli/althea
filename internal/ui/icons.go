@@ -42,6 +42,8 @@ var glyphs = map[string]*ui.SVG{
 	"app":                 svg(`<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 12h6"/>`),
 	"script":              svg(`<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 10 3 2-3 2M12 15h5"/>`),
 	"document":            svg(`<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>`),
+	"sparkles":            svg(`<path d="M11 4l1.8 5.2L18 11l-5.2 1.8L11 18l-1.8-5.2L4 11l5.2-1.8z"/><path d="M18.5 3v4M16.5 5h4M18.5 16.5v3M17 18h3"/>`),
+	"translate":           svg(`<path d="M4 6h9M8.5 4v2M11 6c-.8 3.6-3.2 6.5-6.5 8M6 9.5c1 2 2.8 3.6 5 4.5"/><path d="M12.5 20l4-9 4 9M14 17h5"/>`),
 	"back":                svg(`<path d="M15 6l-6 6 6 6"/>`),
 	"clipboard":           svg(`<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>`),
 	"image":               svg(`<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/>`),

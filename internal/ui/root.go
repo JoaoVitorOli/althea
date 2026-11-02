@@ -37,6 +37,8 @@ type Root struct {
 	Icons *Icons
 	// Host runs the code of the views extensions push; nil runs none.
 	Host Host
+	// OnTake runs what Tab does with the query; the host says what with SetTake.
+	OnTake func(query string)
 
 	theme theme.Theme
 	ui    *ui.Theme
@@ -50,6 +52,9 @@ type Root struct {
 	toasts   []string
 	list     ui.ListState
 	actions  actionPanel
+
+	take      string // what Tab does with takeQuery, for the footer; "" for nothing
+	takeQuery string
 
 	stack  []page // the views extensions pushed, the last on top
 	pushes int    // views pushed so far, which tells a page's elements from the one before
@@ -97,6 +102,21 @@ func (r *Root) SetResults(query string, results []registry.Result) {
 	if len(results) > 0 {
 		r.list.ScrollIntoView(0)
 	}
+}
+
+// SetTake says what Tab does with query, by its title; "" for nothing.
+func (r *Root) SetTake(query, title string) {
+	if query == r.query {
+		r.take, r.takeQuery = title, query
+	}
+}
+
+// taking is what Tab does with the query now, "" for nothing or for a query that has moved on.
+func (r *Root) taking() string {
+	if r.query == "" || r.query != r.takeQuery {
+		return ""
+	}
+	return r.take
 }
 
 // View builds the root view for one frame.
@@ -149,7 +169,13 @@ func (r *Root) View(c *ui.Context) {
 				}
 				// Actions' own shortcuts go through the field first: it would take some, as
 				// Ctrl+Shift+C, for itself.
-				field.HandleInput(r.actionShortcut)
+				field.HandleInput(func(ev ui.InputEvent) bool {
+					if ev.Kind == ui.InputKeyDown && ev.Key == ui.KeyTab && ev.Mods == 0 && !r.actions.open && r.taking() != "" {
+						r.OnTake(r.query)
+						return true
+					}
+					return r.actionShortcut(ev)
+				})
 				// The field takes Enter: it runs the chosen action, of the panel or of the result.
 				if field.Submitted() && len(r.results) > 0 {
 					action := 0
@@ -336,6 +362,9 @@ func (r *Root) footer(c *ui.Context) {
 	pad := r.theme.Space.Padding
 	ui.Row(c).Padding(pad-4, pad+4).Gap(pad).AlignItems(ui.Center).Children(func() {
 		ui.Text(c, r.T("launcher.title")).FontSize(small).TextColor(t.TextMuted).Grow(1)
+		if take := r.taking(); take != "" && r.notice == "" {
+			hint(c, take, "Tab", small)
+		}
 		if len(r.results) == 0 {
 			if r.Hotkey != "" {
 				ui.Text(c, r.T("launcher.hint_toggle", "hotkey", r.Hotkey)).FontSize(small).TextColor(t.TextMuted)

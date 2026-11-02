@@ -1,7 +1,7 @@
 package sdk
 
 // View is what a command shows in the launcher in place of the root search: a *List, a *Grid,
-// a *Detail or a *Form. An action shows one with Context.Push; Escape goes back to the view
+// a *Detail, a *Form or a *Chat. An action shows one with Context.Push; Escape goes back to the view
 // before it. The host draws views with the theme, the motion and the keys of every other view,
 // so an extension says what to show, not how. See docs/adr/0004-declarative-views.md.
 type View interface{ isView() }
@@ -54,6 +54,11 @@ type Detail struct {
 	// Image is shown above the Markdown, as large as fits: a PNG held in memory.
 	Image    []byte
 	Markdown string
+	// Stream, when set, writes the Markdown as the view opens, as an answer that comes little by
+	// little: each call of show replaces what shows. Escape or closing the view cancels ctx, and
+	// the error is shown as a toast. It runs off the main thread, and show may be called from any
+	// goroutine until Stream returns.
+	Stream   func(ctx Context, show func(markdown string)) error
 	Metadata []Metadata
 	// Actions are what the user can do from the view, as an Item's: the first on Enter.
 	Actions []Action
@@ -107,6 +112,32 @@ type Field struct {
 	Validate func(value string) string
 }
 
+// Chat is a conversation: what was said, over a field to say more, with answers that come little
+// by little.
+type Chat struct {
+	Title       string
+	Placeholder string
+	// Messages are what was said before.
+	Messages []ChatMessage
+	// First, when set, is said as the view opens, as if the user typed it.
+	First string
+	// Send answers what the user said: each call of show replaces the answer so far. Escape or
+	// closing the view cancels ctx, and what came stays. The error is shown as a toast. It runs off
+	// the main thread, and show may be called from any goroutine until Send returns.
+	Send func(ctx Context, text string, show func(markdown string)) error
+	// SendTitle names what Enter does in the footer; "Send" when empty.
+	SendTitle string
+	// Actions are what else the user can do from the view: the first on Ctrl+Enter.
+	Actions []Action
+}
+
+// ChatMessage is something said in a Chat: by the user when Mine is set, and otherwise an answer,
+// in Markdown.
+type ChatMessage struct {
+	Mine bool
+	Text string
+}
+
 // Option is a choice of a Dropdown.
 type Option struct {
 	Value string
@@ -123,3 +154,4 @@ func (*List) isView()   {}
 func (*Grid) isView()   {}
 func (*Detail) isView() {}
 func (*Form) isView()   {}
+func (*Chat) isView()   {}

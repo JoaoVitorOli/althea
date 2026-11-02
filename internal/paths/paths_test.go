@@ -26,6 +26,7 @@ func TestWindowsFollowsAppDataFolders(t *testing.T) {
 		Settings: filepath.Join(roaming, "settings.toml"),
 		Themes:   filepath.Join(roaming, "themes"),
 		Scripts:  filepath.Join(roaming, "scripts"),
+		Commands: filepath.Join(roaming, "ai-commands"),
 		Data:     local,
 		Database: filepath.Join(local, "althea.db"),
 		Cache:    filepath.Join(local, "cache"),

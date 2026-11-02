@@ -196,6 +196,29 @@ func (r *Registry) fallbacks(ctx context.Context, query string) []Result {
 	return out
 }
 
+// Take returns what Tab does with query: the action of the first extension that takes it.
+func (r *Registry) Take(ctx context.Context, query string) (ext string, act *sdk.Action) {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return "", nil
+	}
+	for _, e := range r.exts {
+		taker, ok := e.(sdk.QueryTaker)
+		if !ok {
+			continue
+		}
+		id := e.Manifest().ID
+		_ = r.guard(id, "take", func() error {
+			act = taker.TakeQuery(r.deps.Context(ctx, id), query)
+			return nil
+		})
+		if act != nil {
+			return id, act
+		}
+	}
+	return "", nil
+}
+
 // answers asks every Answerer at once and keeps the answers that arrive in time, in the order
 // of the extensions.
 func (r *Registry) answers(ctx context.Context, query string) []Result {

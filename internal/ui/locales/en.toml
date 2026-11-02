@@ -17,6 +17,8 @@ search_placeholder = "Search…"
 empty = "Nothing here yet"
 required = "Required"
 submit = "Submit"
+send = "Send"
+chat_placeholder = "Say something…"
 
 [tray]
 open = "Open Althea"

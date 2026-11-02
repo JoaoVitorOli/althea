@@ -20,6 +20,7 @@ import (
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/fswatch"
 	"github.com/JoaoVitorOli/althea/internal/hotkey"
+	"github.com/JoaoVitorOli/althea/internal/netpolicy"
 	"github.com/JoaoVitorOli/althea/internal/paths"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/platform/host"
@@ -60,6 +61,7 @@ func Run() (err error) {
 	}
 	defer func() { err = errors.Join(err, c.Close()) }()
 	a.core = c
+	a.net = netpolicy.New(c.log, nil)
 
 	mygo.App.SetName("Althea")
 	mygo.App.OnWindowAllClosed(func() {}) // keep running in the tray with the launcher hidden
@@ -91,6 +93,10 @@ type althea struct {
 	prefsSettings *settingsExtension
 	// background runs the extensions' services.
 	background *services
+	// net is the only way to the network.
+	net *netpolicy.Policy
+	// selection reads the text selected in other apps.
+	selection selectionReader
 	// keys shares the keyboard hook.
 	keys *keyboard
 	// shortcuts binds the extensions' hotkeys, in order.

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -55,6 +57,8 @@ func (hostContext) Storage() sdk.Storage          { return nil }
 func (hostContext) Preferences() sdk.Preferences  { return nil }
 func (hostContext) Database() sdk.Database        { return nil }
 func (hostContext) ClipboardText() string         { return "" }
+func (hostContext) SelectedText() (string, error) { return "", nil }
+func (hostContext) HTTP() *http.Client            { return nil }
 func (hostContext) Paste(sdk.Clip) error          { return nil }
 func (hostContext) Copy(sdk.Clip) error           { return nil }
 func (hostContext) Refresh()                      {}
@@ -171,4 +175,44 @@ func TestRefreshWhileQuerying(t *testing.T) {
 		wg.Go(func() { r.Query(context.Background(), "c") })
 	}
 	wg.Wait()
+}
+
+// taker takes queries that start with its word.
+type taker struct {
+	id, word string
+	panics   bool
+}
+
+func (t taker) Manifest() sdk.Manifest           { return sdk.Manifest{ID: t.id} }
+func (taker) Commands(sdk.Context) []sdk.Command { return nil }
+
+func (t taker) TakeQuery(_ sdk.Context, query string) *sdk.Action {
+	if t.panics {
+		panic("boom")
+	}
+	if !strings.HasPrefix(query, t.word) {
+		return nil
+	}
+	return &sdk.Action{Title: t.id}
+}
+
+func TestTabGoesToTheFirstExtensionThatTakesTheQuery(t *testing.T) {
+	r := registry.New([]sdk.Extension{
+		taker{id: "broken", panics: true}, taker{id: "ai", word: "ask"}, taker{id: "late", word: "ask"},
+	}, registry.Deps{
+		Use: func(string, string) float64 { return 0 },
+		Context: func(ctx context.Context, _ string) sdk.Context {
+			return hostContext{ctx, slog.New(slog.DiscardHandler)}
+		},
+		Log: slog.New(slog.DiscardHandler),
+	})
+	if ext, act := r.Take(context.Background(), "ask me"); ext != "ai" || act == nil {
+		t.Errorf("taken by %q, %v", ext, act)
+	}
+	if ext, act := r.Take(context.Background(), "nothing"); ext != "" || act != nil {
+		t.Errorf("taken by %q, %v", ext, act)
+	}
+	if ext, act := r.Take(context.Background(), "   "); ext != "" || act != nil {
+		t.Errorf("an empty query taken by %q, %v", ext, act)
+	}
 }

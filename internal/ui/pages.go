@@ -60,6 +60,8 @@ func (r *Root) Push(ext string, v sdk.View) {
 		p = newDetailPage(r, ext, v)
 	case *sdk.Form:
 		p = newFormPage(r, ext, v)
+	case *sdk.Chat:
+		p = newChatPage(r, ext, v)
 	default:
 		return
 	}
@@ -215,6 +217,10 @@ func (r *Root) runPage(p page, i int) {
 	r.armed, r.notice = armed{}, ""
 	if f, ok := p.(*formPage); ok {
 		f.submit()
+		return
+	}
+	if ch, ok := p.(*chatPage); ok && i == 0 {
+		ch.submit()
 		return
 	}
 	if a.Run == nil || r.Host == nil {

@@ -25,18 +25,21 @@ func (a *althea) clipboardPlatform() clipboard.Platform {
 		return clipboard.Platform{}
 	}
 	return clipboard.Platform{
-		Watch: func(copied func(clipboard.Copied)) (func(), error) { return watchClipboard(w, copied) },
-		Key:   func() ([]byte, error) { return vaultKey(vault, clipboardKeyName) },
+		Watch: func(copied func(clipboard.Copied)) (func(), error) {
+			return watchClipboard(w, a.selection.reading, copied)
+		},
+		Key: func() ([]byte, error) { return vaultKey(vault, clipboardKeyName) },
 	}
 }
 
 // watchClipboard reads each new clipboard content that its app did not mark as private and
-// hands it to copied, one at a time, on a goroutine of its own.
-func watchClipboard(w platform.ClipboardWatcher, copied func(clipboard.Copied)) (func(), error) {
+// hands it to copied, one at a time, on a goroutine of its own. What changes while quiet says so
+// is Althea's own doing, as reading the selection, and is left out.
+func watchClipboard(w platform.ClipboardWatcher, quiet func() bool, copied func(clipboard.Copied)) (func(), error) {
 	changes := make(chan platform.ClipboardChange, 16)
 	done := make(chan struct{})
 	stop, err := w.Watch(func(c platform.ClipboardChange) {
-		if c.Private {
+		if c.Private || quiet() {
 			return
 		}
 		select {

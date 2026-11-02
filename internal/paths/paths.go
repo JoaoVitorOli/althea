@@ -14,6 +14,7 @@ type Paths struct {
 	Settings string // settings.toml
 	Themes   string // user themes, *.toml
 	Scripts  string // Script Commands
+	Commands string // AI Commands
 	Data     string // what Althea keeps for itself
 	Database string // althea.db
 	Cache    string // what can be rebuilt, such as icons
@@ -74,6 +75,7 @@ func layoutWith(join func(...string) string, config, data, cache, logs string) P
 		Settings: join(config, "settings.toml"),
 		Themes:   join(config, "themes"),
 		Scripts:  join(config, "scripts"),
+		Commands: join(config, "ai-commands"),
 		Data:     data,
 		Database: join(data, "althea.db"),
 		Cache:    cache,

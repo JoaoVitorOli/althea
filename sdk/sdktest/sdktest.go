@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"maps"
+	"net/http"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -37,8 +38,15 @@ type Context struct {
 	// Pasted are the clips pasted; Clipboard is what ClipboardText returns.
 	Pasted    []sdk.Clip
 	Clipboard string
-	Pushed    []sdk.View
-	Popped    int
+	// Selection is what SelectedText returns, and SelectionErr its error. Selections counts the
+	// calls, which press keys in the user's app.
+	Selection    string
+	SelectionErr error
+	Selections   int
+	// Requests are the requests made with HTTP, as "POST https://host/path".
+	Requests []string
+	Pushed   []sdk.View
+	Popped   int
 	// Store is what the extension kept in Storage, by key.
 	Store map[string][]byte
 	// Prefs are the values of the extension's preferences: their defaults at first, for the
@@ -145,6 +153,27 @@ func (c *Context) ClipboardText() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.Clipboard
+}
+
+// SelectedText returns Selection, counting the call.
+func (c *Context) SelectedText() (string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.Selections++
+	return c.Selection, c.SelectionErr
+}
+
+// HTTP records each request in Requests and sends it for real: point the extension at an
+// httptest server. Unlike the host's, it refuses nothing.
+func (c *Context) HTTP() *http.Client { return &http.Client{Transport: recorder{c}} }
+
+type recorder struct{ c *Context }
+
+func (r recorder) RoundTrip(req *http.Request) (*http.Response, error) {
+	r.c.mu.Lock()
+	r.c.Requests = append(r.c.Requests, req.Method+" "+req.URL.Scheme+"://"+req.URL.Host+req.URL.Path)
+	r.c.mu.Unlock()
+	return http.DefaultTransport.RoundTrip(req)
 }
 
 // Paste records the clip, puts its text in Clipboard and counts a hide, as the host hides to

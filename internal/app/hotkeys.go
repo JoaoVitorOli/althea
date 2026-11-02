@@ -172,7 +172,7 @@ func (a *althea) reveal() {
 // hotkeyContext is the context of a command run from its hotkey. Nothing shows the launcher for
 // it, so the views it pushes must.
 func (a *althea) hotkeyContext(ext string) sdk.Context {
-	return revealing{a.extensionContext(context.Background(), ext), a.reveal}
+	return revealing{a.actionContext(context.Background(), ext), a.reveal}
 }
 
 // revealing is a context whose views show the launcher.

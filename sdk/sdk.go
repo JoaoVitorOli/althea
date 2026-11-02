@@ -8,6 +8,7 @@ import (
 	"context"
 	"io/fs"
 	"log/slog"
+	"net/http"
 )
 
 // Extension is a unit of features.
@@ -66,6 +67,15 @@ type FallbackSource interface {
 	Fallbacks(ctx Context, query string) []Item
 }
 
+// QueryTaker is an extension the user can hand what they typed in the root search to, with Tab,
+// as to ask AI about it. The footer shows the action's title while there is a query. The first
+// extension that takes a query gets it.
+type QueryTaker interface {
+	// TakeQuery returns what Tab does with query, nil to leave it. It must return at once, doing
+	// nothing until the user presses Tab.
+	TakeQuery(ctx Context, query string) *Action
+}
+
 // Item is a result in the root search.
 type Item struct {
 	ID       string // unique within the extension
@@ -110,7 +120,7 @@ type Icon struct {
 	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",
 	// "power", "lock", "moon", "restart", "trash", "settings", "app", "logout", "sun",
-	// "script", "document", "link", "clipboard", "image", "color", "folder", and "window.left",
+	// "script", "document", "link", "clipboard", "image", "color", "folder", "sparkles", "translate", and "window.left",
 	// "window.right", "window.top", "window.bottom", "window.third_first", "window.third_center",
 	// "window.third_last", "window.top_left", "window.top_right", "window.bottom_left",
 	// "window.bottom_right", "window.center", "window.maximize", "window.almost", "window.display",
@@ -145,6 +155,11 @@ type Context interface {
 	Copy(c Clip) error
 	// ClipboardText is the text on the clipboard, "" when it holds none.
 	ClipboardText() string
+	// SelectedText is the text selected in the app the user was in before the launcher showed, ""
+	// when there is none or the system cannot tell. It presses Ctrl+C in that app, leaving the
+	// clipboard as it was, so call it only when the user asked for something to be done with the
+	// selection, off the main thread, as in Run. The launcher hides meanwhile and shows again.
+	SelectedText() (string, error)
 	// Paste puts a clip on the clipboard and pastes it into the app the user was in before the
 	// launcher showed, hiding the launcher.
 	Paste(c Clip) error
@@ -170,6 +185,12 @@ type Context interface {
 	Database() Database
 	// Preferences are the values the user set for the extension's Preferences.
 	Preferences() Preferences
+	// HTTP is the client for every request the extension makes (docs/adr/0012-privacy.md). The host
+	// logs each request and lets through only those made with a Context of something the user did:
+	// running a command or an action, or opening a view. Pass that Context to the request, as in
+	// http.NewRequestWithContext(ctx, ...). The Context of Commands, Items, Answer, Fallbacks,
+	// Preferences and Serve is refused. The client has no time limit: a request ends with its Context.
+	HTTP() *http.Client
 }
 
 // Storage keeps an extension's values by key in Althea's database, apart from every other

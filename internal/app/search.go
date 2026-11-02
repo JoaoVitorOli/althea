@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/system"
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/frecency"
+	"github.com/JoaoVitorOli/althea/internal/netpolicy"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/prefs"
 	"github.com/JoaoVitorOli/althea/internal/registry"
@@ -94,6 +96,7 @@ func (a *althea) setUpSearch() error {
 	})
 	a.root.OnQuery = s.query
 	a.root.OnRun = s.run
+	a.root.OnTake = s.take
 	a.root.Host = viewHost{a}
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	go s.refresh()
@@ -200,10 +203,18 @@ func (s *searcher) query(q string) {
 	s.mu.Unlock()
 	go func() {
 		results := s.registry.Query(ctx, q)
+		_, take := s.registry.Take(ctx, q)
 		if ctx.Err() != nil {
 			return
 		}
-		s.a.launcher.Window().Update(func() { s.a.root.SetResults(q, results) })
+		s.a.launcher.Window().Update(func() {
+			s.a.root.SetResults(q, results)
+			title := ""
+			if take != nil {
+				title = take.Title
+			}
+			s.a.root.SetTake(q, title)
+		})
 	}()
 }
 
@@ -218,7 +229,17 @@ func (s *searcher) run(res registry.Result, action int) {
 				s.a.log.Warn("frecency", "err", err)
 			}
 		}
-		s.perform(s.a.extensionContext(context.Background(), res.Extension), res, act)
+		s.perform(s.a.actionContext(context.Background(), res.Extension), res, act)
+	}()
+}
+
+// take hands the query to the extension that takes it, as Tab asks.
+func (s *searcher) take(query string) {
+	go func() {
+		ext, act := s.registry.Take(context.Background(), query)
+		if act != nil {
+			s.perform(s.a.actionContext(context.Background(), ext), registry.Result{Extension: ext}, *act)
+		}
 	}()
 }
 
@@ -249,7 +270,7 @@ func (h viewHost) Go(ext string, fn func(ctx sdk.Context) error) (cancel func())
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		defer cancel()
-		ectx := h.a.extensionContext(ctx, ext)
+		ectx := h.a.actionContext(ctx, ext)
 		defer func() {
 			if p := recover(); p != nil {
 				h.a.log.Error("extension panicked", "extension", ext, "panic", p)
@@ -268,7 +289,7 @@ func (h viewHost) Update(fn func()) { h.a.launcher.Window().Update(fn) }
 // askPreferences shows the preferences of an extension that misses required ones, and runs the
 // action once they are saved.
 func (s *searcher) askPreferences(res registry.Result, act sdk.Action) {
-	settings := s.a.extensionContext(context.Background(), settingsID)
+	settings := s.a.actionContext(context.Background(), settingsID)
 	m := sdk.Manifest{ID: res.Extension, Title: res.Extension}
 	for _, e := range s.a.prefsSettings.exts {
 		if e.ID == res.Extension {
@@ -276,7 +297,7 @@ func (s *searcher) askPreferences(res registry.Result, act sdk.Action) {
 		}
 	}
 	settings.Push(s.a.prefsSettings.form(settings, m, func(sdk.Context) error {
-		return act.Run(s.a.extensionContext(context.Background(), res.Extension))
+		return act.Run(s.a.actionContext(context.Background(), res.Extension))
 	}))
 }
 
@@ -292,7 +313,14 @@ func (a *althea) extensionContext(ctx context.Context, ext string) sdk.Context {
 	return &hostContext{Context: ctx, a: a, ext: ext, log: a.log.With("extension", ext)}
 }
 
+// actionContext is the context of something the user did, whose requests may leave.
+func (a *althea) actionContext(ctx context.Context, ext string) sdk.Context {
+	return a.extensionContext(netpolicy.Allow(ctx), ext)
+}
+
 func (h *hostContext) Log() *slog.Logger { return h.log }
+
+func (h *hostContext) HTTP() *http.Client { return h.a.net.Client(h.ext) }
 
 func (h *hostContext) Open(target string) error {
 	if strings.Contains(target, "://") {
@@ -313,6 +341,10 @@ func (h *hostContext) Refresh() {
 }
 
 func (*hostContext) ClipboardText() string { return mygo.Clipboard.ReadText() }
+
+func (h *hostContext) SelectedText() (string, error) {
+	return h.a.selection.read(h.a.selectionClipboard())
+}
 
 func (h *hostContext) Paste(c sdk.Clip) error {
 	if err := h.Copy(c); err != nil {

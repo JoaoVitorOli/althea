@@ -68,6 +68,10 @@ type Paster interface {
 	// Paste gives window the keyboard back and pastes the clipboard there, then moves the caret
 	// back characters left.
 	Paste(window uintptr, back int) error
+	// CopySelection gives window the keyboard back and presses Ctrl+C there, reporting whether the
+	// clipboard changed soon after: it does not when nothing is selected. It leaves alone windows
+	// where Ctrl+C means something else, as terminals, where it would stop what runs.
+	CopySelection(window uintptr) (copied bool, err error)
 }
 
 // Typist types into the app in front, as snippet expansion does.

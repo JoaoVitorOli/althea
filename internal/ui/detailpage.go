@@ -7,23 +7,52 @@ import (
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
-// detailPage shows a Detail: its Markdown, which scrolls, and its metadata.
+// detailPage shows a Detail: its Markdown, which scrolls, and its metadata. A Detail that streams
+// follows its text as it comes, until the user scrolls away from the end.
 type detailPage struct {
 	pageBase
 	d  *sdk.Detail
 	md markdown.Options
+
+	text      string
+	streaming bool
+	scroll    follower
 }
 
 func newDetailPage(r *Root, ext string, d *sdk.Detail) *detailPage {
-	return &detailPage{pageBase: pageBase{r: r, ext: ext, name: d.Title}, d: d}
+	p := &detailPage{pageBase: pageBase{r: r, ext: ext, name: d.Title}, d: d, text: d.Markdown}
+	if d.Stream == nil || r.Host == nil {
+		return p
+	}
+	p.streaming = true
+	p.work(func(ctx sdk.Context) error {
+		err := d.Stream(ctx, func(markdown string) {
+			p.update(func() {
+				if p.streaming {
+					p.text = markdown
+				}
+			})
+		})
+		p.update(func() { p.streaming = false })
+		return err
+	})
+	return p
 }
 
 func (p *detailPage) header(c *ui.Context) {
 	ui.Text(c, p.d.Title).FontSize(p.r.theme.Font.Size + 2).FontWeight(600).TextColor(c.Theme().Text).Grow(1).SingleLine()
+	if p.streaming {
+		ui.Spinner(c).Size(16, 16)
+	}
 }
 
 func (p *detailPage) body(c *ui.Context) {
-	ui.Scroll(c).Grow(1).Padding(16, 20).Children(func() { p.r.detail(c, p.d, &p.md) })
+	if p.streaming {
+		p.scroll.frame()
+	}
+	ui.Scroll(c).TrackScroll(&p.scroll.ScrollState).Grow(1).Padding(16, 20).Children(func() {
+		p.r.detailText(c, p.d, p.text, p.streaming, &p.md)
+	})
 }
 
 func (p *detailPage) keys(c *ui.Context) {
@@ -35,11 +64,25 @@ func (p *detailPage) keys(c *ui.Context) {
 func (p *detailPage) actions() []sdk.Action { return p.d.Actions }
 func (*detailPage) secondary() int          { return 1 }
 func (*detailPage) chosen() string          { return "" }
-func (*detailPage) escape() bool            { return false }
 func (*detailPage) focus()                  {}
+
+// escape stops what is being written, keeping what came, before leaving.
+func (p *detailPage) escape() bool {
+	if !p.streaming {
+		return false
+	}
+	p.streaming = false
+	p.close()
+	return true
+}
 
 // detail draws a Detail's Markdown, then its metadata as labeled lines.
 func (r *Root) detail(c *ui.Context, d *sdk.Detail, md *markdown.Options) {
+	r.detailText(c, d, d.Markdown, false, md)
+}
+
+// detailText draws a Detail with the Markdown text, still being written when streaming is set.
+func (r *Root) detailText(c *ui.Context, d *sdk.Detail, text string, streaming bool, md *markdown.Options) {
 	t := c.Theme()
 	if md.Theme == nil {
 		md.Theme = &markdown.Theme{FontSize: r.theme.Font.Size}
@@ -48,13 +91,16 @@ func (r *Root) detail(c *ui.Context, d *sdk.Detail, md *markdown.Options) {
 		if b := r.Icons.Data(d.Image); b != nil {
 			ui.Image(c, b).Height(220).Fit(ui.Contain).Radius(r.theme.Shape.RowRadius).AlignSelf(ui.Start)
 		}
-		if d.Markdown != "" {
-			markdown.View(c, d.Markdown, md)
+		switch {
+		case streaming && text != "":
+			markdown.Stream(c, text, md)
+		case text != "":
+			markdown.View(c, text, md)
 		}
 		if len(d.Metadata) == 0 {
 			return
 		}
-		if d.Markdown != "" {
+		if text != "" {
 			ui.Divider(c)
 		}
 		ui.Column(c).Gap(8).Children(func() {
