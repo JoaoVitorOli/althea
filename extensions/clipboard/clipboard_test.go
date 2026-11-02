@@ -5,6 +5,7 @@ import (
 	"context"
 	"image"
 	"image/png"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -99,7 +100,8 @@ func TestKindsPreviewsAndSections(t *testing.T) {
 	c.t = c.t.Add(10 * 24 * time.Hour)
 	_ = e.Record(ctx, clipboard.Copied{Text: "#7c3aed"})
 	_ = e.Record(ctx, clipboard.Copied{Image: pngOf(t, 1920, 1080)})
-	_ = e.Record(ctx, clipboard.Copied{Files: []string{`C:\a\report.pdf`, `C:\a\b.txt`}})
+	report := filepath.Join(t.TempDir(), "report.pdf")
+	_ = e.Record(ctx, clipboard.Copied{Files: []string{report, filepath.Join(filepath.Dir(report), "b.txt")}})
 	items := search(t, e, ctx, "")
 	if len(items) != 4 {
 		t.Fatalf("items %q", titles(items))
@@ -118,7 +120,7 @@ func TestKindsPreviewsAndSections(t *testing.T) {
 	if byTitle["#7c3aed"].Icon.Data == nil {
 		t.Error("a color has no swatch")
 	}
-	if f := byTitle["report.pdf e mais 1"]; f.Icon.File != `C:\a\report.pdf` {
+	if f := byTitle["report.pdf e mais 1"]; f.Icon.File != report {
 		t.Errorf("files item %+v", f)
 	}
 	if link := byTitle["https://go.dev"]; link.Section != "Antes" || link.Icon.Glyph != "link" {
@@ -197,6 +199,16 @@ func (f *fakeWatch) copy(t *testing.T, c clipboard.Copied) {
 	}
 }
 
+// canceling is a Context that ends with another, leaving the test's own usable after it. Changing
+// the test's Context instead would race with the database, which watches the one it was given.
+type canceling struct {
+	*sdktest.Context
+	c context.Context
+}
+
+func (c canceling) Done() <-chan struct{} { return c.c.Done() }
+func (c canceling) Err() error            { return c.c.Err() }
+
 func TestServeKeepsCopiesButIgnoredAppsAndOldOnes(t *testing.T) {
 	w := &fakeWatch{}
 	e := clipboard.New(clipboard.Platform{Key: func() ([]byte, error) { return key, nil }, Watch: w.watch})
@@ -206,9 +218,8 @@ func TestServeKeepsCopiesButIgnoredAppsAndOldOnes(t *testing.T) {
 	ctx.Prefs["ignore"] = "KeePass, bitwarden.exe"
 	ctx.Prefs["keep"] = "day"
 	cctx, cancel := context.WithCancel(context.Background())
-	ctx.Context = cctx
 	done := make(chan error)
-	go func() { done <- e.Serve(ctx) }()
+	go func() { done <- e.Serve(canceling{ctx, cctx}) }()
 
 	w.copy(t, clipboard.Copied{Text: "old", Source: "notepad.exe"})
 	c.t = c.t.Add(25 * time.Hour)
@@ -219,7 +230,6 @@ func TestServeKeepsCopiesButIgnoredAppsAndOldOnes(t *testing.T) {
 	if err := <-done; err != nil {
 		t.Fatal(err)
 	}
-	ctx.Context = context.Background()
 	if got := titles(search(t, e, ctx, "")); len(got) != 1 || got[0] != "new" {
 		t.Errorf("history = %q; want only what is recent and not ignored", got)
 	}
