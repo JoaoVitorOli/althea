@@ -207,7 +207,7 @@ func (e *Extension) install(ctx sdk.Context, d download, progress func(percent i
 	}
 	if d.engine {
 		path := e.enginePath()
-		if err := fetch(ctx, e.engineFile, path, moved); err != nil {
+		if err := fetch(ctx, e.engineFile, path, executable, moved); err != nil {
 			return err
 		}
 	}
@@ -219,7 +219,7 @@ func (e *Extension) install(ctx sdk.Context, d download, progress func(percent i
 				moved(f.Size)
 				continue
 			}
-			if err := fetch(ctx, f, path, moved); err != nil {
+			if err := fetch(ctx, f, path, 0o600, moved); err != nil {
 				return err
 			}
 		}
@@ -231,8 +231,12 @@ func (e *Extension) install(ctx sdk.Context, d download, progress func(percent i
 	return nil
 }
 
-// fetch downloads f to path through a temporary file, checking its size and hash.
-func fetch(ctx sdk.Context, f File, path string, moved func(int64)) (err error) {
+// executable is the mode of a program downloaded to run.
+const executable os.FileMode = 0o700
+
+// fetch downloads f to path through a temporary file, checking its size and hash, and gives it its
+// mode before it takes its name: a file under that name is ready to use.
+func fetch(ctx sdk.Context, f File, path string, mode os.FileMode, moved func(int64)) (err error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.URL, http.NoBody)
 	if err != nil {
 		return err
@@ -277,6 +281,9 @@ func fetch(ctx sdk.Context, f File, path string, moved func(int64)) (err error) 
 		return errors.New(ctx.T("download.corrupt"))
 	}
 	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("%s: %w", ctx.T("download.failed"), err)
+	}
+	if err := os.Chmod(tmp.Name(), mode); err != nil {
 		return fmt.Errorf("%s: %w", ctx.T("download.failed"), err)
 	}
 	if err := os.Rename(tmp.Name(), path); err != nil {
