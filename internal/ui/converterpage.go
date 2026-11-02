@@ -254,7 +254,7 @@ func (p *converterPage) body(c *ui.Context) {
 				placeholder = p.r.T("view.chat_placeholder")
 			}
 			field := ui.TextAreaBase(c, &p.text).Bind(&p.input).Grow(1).Placeholder(placeholder).Label(placeholder)
-			field.HandleInput(p.inputKeys)
+			field.OnTextKey(func(k ui.TextKey) bool { return p.inputKeys(k.Key, k.Mods) })
 		})
 		p.card(c, p.result, func() {
 			ui.Scroll(c).TrackScroll(&p.scroll).Grow(1).Children(func() { p.output(c) })
@@ -301,17 +301,15 @@ func (p *converterPage) copyText(text string) {
 	})
 }
 
-// inputKeys handles the keys the text area would take for itself. Enter runs and Shift+Enter breaks
-// the line, as in a chat; with the action panel open, the keys are the panel's.
-func (p *converterPage) inputKeys(ev ui.InputEvent) bool {
-	if ev.Kind != ui.InputKeyDown {
-		return false
-	}
-	if p.r.pageShortcut(p, ev) {
+// inputKeys handles the keys the text area would take for itself, the arrows and Enter among them,
+// as they come. Enter runs and Shift+Enter breaks the line, as in a chat; with the action panel open,
+// the keys are the panel's.
+func (p *converterPage) inputKeys(key ui.Key, mods ui.Modifiers) bool {
+	if p.r.pageShortcut(p, ui.InputEvent{Kind: ui.InputKeyDown, Key: key, Mods: mods}) {
 		return true
 	}
 	if p.r.actions.open {
-		switch ev.Key {
+		switch key {
 		case ui.KeyEnter:
 			p.r.runPage(p, p.r.actions.selected)
 			return true
@@ -324,8 +322,8 @@ func (p *converterPage) inputKeys(ev ui.InputEvent) bool {
 		}
 		return false
 	}
-	if ev.Key == ui.KeyEnter {
-		switch ev.Mods {
+	if key == ui.KeyEnter {
+		switch mods {
 		case 0:
 			p.run()
 			return true

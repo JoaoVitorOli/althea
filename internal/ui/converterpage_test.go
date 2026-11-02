@@ -282,3 +282,80 @@ func TestAFormsLongDropdownCanBeSearched(t *testing.T) {
 		t.Errorf("values %v; texts %q", got, tt.Texts())
 	}
 }
+
+func TestTheActionPanelTakesTheArrowsFromTheText(t *testing.T) {
+	r, tt, _ := pushing(t)
+	var asked []sdk.Conversion
+	r.Push("test", converter(marking(&asked)))
+	tt.Frame()
+	tt.Type("Oi")
+	tt.Key(0, ui.KeyEnter)
+	tt.Frame()
+	asked = nil
+	p := r.stack[0].(*converterPage)
+
+	tt.Key(ui.Ctrl, ui.KeyK)
+	tt.Frame()
+	if !r.actions.open {
+		t.Fatal("the panel did not open")
+	}
+	tt.Key(0, ui.KeyDown)
+	tt.Key(0, ui.KeyDown)
+	tt.Key(0, ui.KeyDown)
+	tt.Key(0, ui.KeyDown) // on "Para"
+	tt.Key(0, ui.KeyUp)
+	tt.Key(0, ui.KeyDown)
+	tt.Frame()
+	if r.actions.selected != 4 {
+		t.Fatalf("selected %d, want 4", r.actions.selected)
+	}
+	if p.text != "Oi" {
+		t.Errorf("the text changed: %q", p.text)
+	}
+
+	tt.Key(0, ui.KeyEnter)
+	tt.Frame()
+	if r.actions.open || len(r.stack) != 2 {
+		t.Fatalf("open %v, stack %d; texts %q", r.actions.open, len(r.stack), tt.Texts())
+	}
+	if len(asked) != 0 {
+		t.Errorf("Enter ran the translation rather than the action: %v", asked)
+	}
+	if !tt.HasText("Português") || !tt.HasText("Turco") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+}
+
+func TestTheActionPanelRunsWhatIsClicked(t *testing.T) {
+	r, tt, _ := pushing(t)
+	var asked []sdk.Conversion
+	r.Push("test", converter(marking(&asked)))
+	tt.Frame()
+	tt.Type("Oi")
+	tt.Key(0, ui.KeyEnter)
+	tt.Frame()
+
+	tt.Key(ui.Ctrl, ui.KeyK)
+	tt.Frame()
+	if err := tt.Click("Copy Result"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if r.actions.open {
+		t.Error("the click did not run the action")
+	}
+}
+
+func TestEscapeClosesTheActionPanelAlone(t *testing.T) {
+	r, tt, _ := pushing(t)
+	var asked []sdk.Conversion
+	r.Push("test", converter(marking(&asked)))
+	tt.Frame()
+	tt.Key(ui.Ctrl, ui.KeyK)
+	tt.Frame()
+	tt.Key(0, ui.KeyEscape)
+	tt.Frame()
+	if r.actions.open || len(r.stack) != 1 {
+		t.Errorf("open %v, stack %d", r.actions.open, len(r.stack))
+	}
+}
