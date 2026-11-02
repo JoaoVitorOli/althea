@@ -1,0 +1,10 @@
+title = { en = "Fix Grammar", pt-BR = "Corrigir gramática" }
+subtitle = { en = "Correct the selected text, or the clipboard's", pt-BR = "Corrige o texto selecionado, ou o da área de transferência" }
+icon = "✍️"
+keywords = ["grammar", "spelling", "fix", "gramática", "ortografia", "corrigir"]
+system = "You correct text. Reply with the corrected text alone, with no comment, in the language it is written in, keeping its formatting and meaning."
+prompt = """
+Fix the grammar and spelling of this text:
+
+{text}
+"""

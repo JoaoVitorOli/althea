@@ -1,0 +1,58 @@
+language = "português do Brasil"
+
+[prefs]
+provider = "Provedor"
+custom = "Outro (compatível com OpenAI)"
+model = "Modelo"
+model_info = "O nome do modelo como o provedor escreve, como claude-sonnet-5-5, gemini-2.5-flash ou llama3.2."
+api_key = "Chave de API"
+api_key_info = "Guardada no Gerenciador de Credenciais do Windows. Servidores locais não precisam de chave."
+base_url = "Endereço do servidor"
+base_url_info = "Substitui o endereço do provedor, para um servidor seu. \"Outro\" precisa dele, como http://localhost:8000/v1."
+instructions = "Instruções"
+instructions_info = "Acrescentadas a tudo o que se pede ao modelo, como o jeito de responder que você prefere."
+save_chats = "Salvar conversas"
+save_chats_info = "Guarda as conversas no banco de dados do Althea, para voltar a elas no Chat com IA."
+
+[quick]
+ask = "Perguntar à IA"
+ask_about = "Perguntar à IA: \"{query}\""
+
+[chat]
+title = "Chat com IA"
+subtitle = "Converse com a IA e volte às conversas salvas"
+search = "Buscar conversas…"
+new = "Nova conversa"
+new_keywords = "new chat nova conversa"
+start = "Começar"
+saved = "Salvas"
+open = "Abrir conversa"
+delete = "Apagar conversa"
+delete_confirm = "Pressione Ctrl+D de novo para apagar"
+placeholder = "Pergunte o que quiser…"
+send = "Perguntar"
+copy = "Copiar resposta"
+copied = "Copiado"
+paste = "Colar resposta"
+
+[commands]
+folder = "Abrir pasta de comandos de IA"
+folder_subtitle = "Escreva seus próprios comandos, em TOML"
+folder_keywords = "ai ia commands toml folder comandos pasta"
+no_folder = "Não há pasta para comandos de IA aqui."
+no_text = "Selecione ou copie algum texto antes."
+continue = "Continuar no chat"
+
+[error]
+address = "\"{address}\" não é um endereço que se possa alcançar. Confira as preferências de IA."
+unreachable = "Não foi possível alcançar {host}. Se o servidor é seu, ele está rodando?"
+refused_key = "O provedor recusou a chave de API ({status})"
+not_found = "O provedor não conhece esse modelo ou endereço ({status})"
+too_many = "O provedor pede para ir mais devagar ({status})"
+status = "O provedor respondeu com um erro ({status})"
+cut_off = "A resposta foi interrompida."
+blocked = "O provedor não quis responder a isto: {reason}"
+no_address = "Escolha um endereço de servidor nas preferências de IA."
+no_key = "{provider} precisa de uma chave de API. Defina em Preferências de extensões, em IA."
+no_model = "Escolha um modelo em Preferências de extensões, em IA."
+key_unread = "Não foi possível ler a chave de API do Gerenciador de Credenciais."

@@ -3,6 +3,7 @@
 package extensions
 
 import (
+	"github.com/JoaoVitorOli/althea/extensions/ai"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/calculator"
 	"github.com/JoaoVitorOli/althea/extensions/clipboard"
@@ -26,6 +27,7 @@ type Platforms struct {
 	Clipboard clipboard.Platform
 	Files     files.Platform
 	Windows   windows.Platform
+	AI        ai.Platform
 }
 
 // Builtin returns the built-in extensions, in the order their answers and fallbacks show.
@@ -39,6 +41,7 @@ func Builtin(p Platforms) []sdk.Extension {
 		snippets.New(p.Snippets),
 		clipboard.New(p.Clipboard),
 		web.New(),
+		ai.New(p.AI),
 		files.New(p.Files),
 		emoji.New(),
 		windows.New(p.Windows),

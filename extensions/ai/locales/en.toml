@@ -1,0 +1,58 @@
+language = "English"
+
+[prefs]
+provider = "Provider"
+custom = "Other (OpenAI-compatible)"
+model = "Model"
+model_info = "The model's name as the provider writes it, as claude-sonnet-5-5, gemini-2.5-flash or llama3.2."
+api_key = "API Key"
+api_key_info = "Kept in Windows Credential Manager. Local servers need none."
+base_url = "Server Address"
+base_url_info = "Replaces the provider's address, for a server of your own. \"Other\" needs it, as http://localhost:8000/v1."
+instructions = "Instructions"
+instructions_info = "Added to everything asked of the model, as how you like to be answered."
+save_chats = "Save conversations"
+save_chats_info = "Keeps conversations in Althea's database, to go back to them in AI Chat."
+
+[quick]
+ask = "Ask AI"
+ask_about = "Ask AI: \"{query}\""
+
+[chat]
+title = "AI Chat"
+subtitle = "Talk to AI, and go back to saved conversations"
+search = "Search conversations…"
+new = "New Conversation"
+new_keywords = "new chat nova conversa"
+start = "Start"
+saved = "Saved"
+open = "Open Conversation"
+delete = "Delete Conversation"
+delete_confirm = "Press Ctrl+D again to delete it"
+placeholder = "Ask anything…"
+send = "Ask"
+copy = "Copy Answer"
+copied = "Copied"
+paste = "Paste Answer"
+
+[commands]
+folder = "Open AI Commands Folder"
+folder_subtitle = "Write your own commands, in TOML"
+folder_keywords = "ai ia commands toml folder comandos pasta"
+no_folder = "There is no folder for AI Commands here."
+no_text = "Select some text or copy it first."
+continue = "Continue in Chat"
+
+[error]
+address = "\"{address}\" is not an address to reach. Check the AI preferences."
+unreachable = "Could not reach {host}. If it is a server of yours, is it running?"
+refused_key = "The provider refused the API key ({status})"
+not_found = "The provider does not know that model or address ({status})"
+too_many = "The provider asks to slow down ({status})"
+status = "The provider answered with an error ({status})"
+cut_off = "The answer was cut off."
+blocked = "The provider would not answer this: {reason}"
+no_address = "Choose a server address in the AI preferences."
+no_key = "{provider} needs an API key. Set it in Extension Preferences, under AI."
+no_model = "Choose a model in Extension Preferences, under AI."
+key_unread = "Could not read the API key from Credential Manager."

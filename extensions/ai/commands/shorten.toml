@@ -1,0 +1,10 @@
+title = { en = "Make Shorter", pt-BR = "Encurtar" }
+subtitle = { en = "Say the same in fewer words", pt-BR = "Diz o mesmo com menos palavras" }
+icon = "✂️"
+keywords = ["shorten", "shorter", "concise", "encurtar", "curto", "conciso"]
+system = "You rewrite text. Reply with the rewritten text alone, with no comment, in the language it is written in."
+prompt = """
+Say the same as this text in fewer words, keeping what matters:
+
+{text}
+"""

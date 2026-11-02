@@ -13,6 +13,7 @@ import (
 	"github.com/egoist/mygo/transfer"
 
 	"github.com/JoaoVitorOli/althea/extensions"
+	"github.com/JoaoVitorOli/althea/extensions/ai"
 	"github.com/JoaoVitorOli/althea/extensions/apps"
 	"github.com/JoaoVitorOli/althea/extensions/files"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
@@ -61,6 +62,7 @@ func (a *althea) setUpSearch() error {
 			Reveal: func(path string) error { mygo.Shell.ShowItemInFolder(path); return nil },
 		},
 		Windows: a.windowsPlatform(),
+		AI:      ai.Platform{CommandsDir: a.paths.Commands},
 	})
 	for _, e := range exts {
 		if err := a.addMessages(e.Manifest()); err != nil {

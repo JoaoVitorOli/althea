@@ -1,0 +1,11 @@
+title = { en = "Explain Code", pt-BR = "Explicar código" }
+subtitle = { en = "Explain the selected code, or the clipboard's", pt-BR = "Explica o código selecionado, ou o da área de transferência" }
+icon = "💡"
+keywords = ["code", "explain", "programming", "código", "explicar", "programação"]
+prompt = """
+Explain what this code does and how, briefly, for a programmer who has not seen it. Write in {language}.
+
+```
+{text}
+```
+"""

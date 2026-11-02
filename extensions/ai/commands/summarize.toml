@@ -1,0 +1,9 @@
+title = { en = "Summarize", pt-BR = "Resumir" }
+subtitle = { en = "Summarize the selected text, or the clipboard's", pt-BR = "Resume o texto selecionado, ou o da área de transferência" }
+icon = "📝"
+keywords = ["summary", "tldr", "resumo", "resumir"]
+prompt = """
+Summarize this text in a few short points. Write in {language}.
+
+{text}
+"""
