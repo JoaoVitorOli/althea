@@ -27,8 +27,6 @@ func KnownFolders() []string {
 	return out
 }
 
-var procCancelIoEx = kernel32.NewProc("CancelIoEx")
-
 // treeEvents are the changes a tree watcher hears of: names, attributes that hide files,
 // sizes and writes, creations and deletions.
 const treeEvents = windows.FILE_NOTIFY_CHANGE_FILE_NAME | windows.FILE_NOTIFY_CHANGE_DIR_NAME |
@@ -38,6 +36,10 @@ const treeEvents = windows.FILE_NOTIFY_CHANGE_FILE_NAME | windows.FILE_NOTIFY_CH
 // WatchTree calls changed with the path of each file or folder that changes anywhere under
 // dir, until stop; "" means changes were lost, as when too many came at once, and the whole
 // tree should be read again. It implements platform.TreeWatcher.
+//
+// The system watches from the first read on, so that read goes out before WatchTree returns: a
+// change made after it is heard, however late the goroutine gets to run. Reads are overlapped so
+// that stop can always end the wait: canceling a blocking read does nothing unless it has begun.
 func WatchTree(dir string, changed func(path string)) (stop func(), err error) {
 	p, err := windows.UTF16PtrFromString(dir)
 	if err != nil {
@@ -45,31 +47,58 @@ func WatchTree(dir string, changed func(path string)) (stop func(), err error) {
 	}
 	h, err := windows.CreateFile(p, windows.FILE_LIST_DIRECTORY,
 		windows.FILE_SHARE_READ|windows.FILE_SHARE_WRITE|windows.FILE_SHARE_DELETE, nil,
-		windows.OPEN_EXISTING, windows.FILE_FLAG_BACKUP_SEMANTICS, 0)
+		windows.OPEN_EXISTING, windows.FILE_FLAG_BACKUP_SEMANTICS|windows.FILE_FLAG_OVERLAPPED, 0)
 	if err != nil {
 		return nil, fmt.Errorf("watch %s: %w", dir, err)
 	}
+	completed, err := windows.CreateEvent(nil, 1, 0, nil)
+	if err != nil {
+		_ = windows.CloseHandle(h)
+		return nil, fmt.Errorf("watch %s: %w", dir, err)
+	}
+	stopped, err := windows.CreateEvent(nil, 1, 0, nil)
+	if err != nil {
+		_ = windows.CloseHandle(completed)
+		_ = windows.CloseHandle(h)
+		return nil, fmt.Errorf("watch %s: %w", dir, err)
+	}
+	closeAll := func() {
+		_ = windows.CloseHandle(stopped)
+		_ = windows.CloseHandle(completed)
+		_ = windows.CloseHandle(h)
+	}
+	const size = 64 << 10
+	buf := make([]byte, size)
+	overlapped := &windows.Overlapped{HEvent: completed}
+	read := func() error {
+		var n uint32
+		err := windows.ReadDirectoryChanges(h, &buf[0], size, true, treeEvents, &n, overlapped, 0)
+		if errors.Is(err, windows.ERROR_IO_PENDING) {
+			return nil
+		}
+		return err
+	}
+	if err := read(); err != nil {
+		closeAll()
+		return nil, fmt.Errorf("watch %s: %w", dir, err)
+	}
 	done := make(chan struct{})
-	var stopping sync.Once
-	var closing bool
-	var mu sync.Mutex
 	go func() {
 		defer close(done)
-		const size = 64 << 10
-		buf := make([]byte, size)
 		for {
-			var n uint32
-			err := windows.ReadDirectoryChanges(h, &buf[0], size, true, treeEvents, &n, nil, 0)
-			mu.Lock()
-			stopped := closing
-			mu.Unlock()
-			if stopped {
+			which, err := windows.WaitForMultipleObjects([]windows.Handle{completed, stopped}, false, windows.INFINITE)
+			if err != nil || which != windows.WAIT_OBJECT_0 {
+				// The kernel writes into buf until the read ends: wait for it before leaving.
+				_ = windows.CancelIoEx(h, overlapped)
+				var n uint32
+				_ = windows.GetOverlappedResult(h, overlapped, &n, true)
 				return
 			}
+			var n uint32
+			err = windows.GetOverlappedResult(h, overlapped, &n, false)
 			switch {
 			case errors.Is(err, windows.ERROR_NOTIFY_ENUM_DIR) || (err == nil && n == 0):
 				changed("") // the buffer overflowed: some changes are lost
-				continue
 			case err != nil:
 				changed("")
 				return // the folder went away, or the volume
@@ -83,16 +112,22 @@ func WatchTree(dir string, changed func(path string)) (stop func(), err error) {
 				}
 				off += info.NextEntryOffset
 			}
+			if err := windows.ResetEvent(completed); err != nil {
+				changed("")
+				return
+			}
+			if err := read(); err != nil {
+				changed("")
+				return
+			}
 		}
 	}()
+	var stopping sync.Once
 	return func() {
 		stopping.Do(func() {
-			mu.Lock()
-			closing = true
-			mu.Unlock()
-			procCancelIoEx.Call(uintptr(h), 0)
+			_ = windows.SetEvent(stopped)
 			<-done
-			_ = windows.CloseHandle(h)
+			closeAll()
 		})
 	}, nil
 }
