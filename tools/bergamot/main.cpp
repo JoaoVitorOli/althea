@@ -30,7 +30,12 @@
 #include "translator/response_options.h"
 #include "translator/service.h"
 
-using namespace marian::bergamot;
+// By name, not the whole namespace: its Logger would clash with Marian's, which its macros name.
+using marian::bergamot::AsyncService;
+using marian::bergamot::parseOptionsFromFilePath;
+using marian::bergamot::Response;
+using marian::bergamot::ResponseOptions;
+using marian::bergamot::TranslationModel;
 
 namespace {
 
