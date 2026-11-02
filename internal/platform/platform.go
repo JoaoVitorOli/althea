@@ -95,6 +95,47 @@ type ClipboardChange struct {
 	Source string
 }
 
+// Rect is a rectangle of the screen, in physical pixels; displays left of the primary have
+// negative coordinates.
+type Rect struct{ X, Y, W, H int }
+
+// Display is a screen.
+type Display struct {
+	// ID stays the same while the screen is plugged in the same way, as "\\.\DISPLAY1".
+	ID string
+	// Work is the screen without the taskbar.
+	Work Rect
+}
+
+// OpenWindow is a window of an app, on the screen.
+type OpenWindow struct {
+	Handle uintptr
+	// App opens the app again through the shell: a program's path or a Store app's shell path.
+	App       string
+	Title     string
+	Frame     Rect
+	Maximized bool
+}
+
+// WindowManager moves other apps' windows, for the Window Management extension. Frames are what
+// the user sees, without the invisible borders windows have to grab them by.
+type WindowManager interface {
+	// Foreground returns the window that has the keyboard, and whether it is one of Althea's.
+	Foreground() (window uintptr, own bool)
+	// Displays returns the screens, the primary first.
+	Displays() ([]Display, error)
+	// Frame returns where window is. It fails on what is no app's window, as the desktop.
+	Frame(window uintptr) (frame Rect, maximized bool, err error)
+	// Place moves window to r and raises it, without giving it the keyboard. It is no longer
+	// maximized or minimized after.
+	Place(window uintptr, r Rect) error
+	Maximize(window uintptr) error
+	// Focus gives window the keyboard.
+	Focus(window uintptr) error
+	// OpenWindows returns the apps' windows on the screen, leaving out Althea's, topmost first.
+	OpenWindows() ([]OpenWindow, error)
+}
+
 // Services are the platform services of the running system.
 type Services struct {
 	Instance SingleInstance
@@ -126,4 +167,6 @@ type Services struct {
 	// WatchTree calls changed with each path that changes under dir, "" when changes were
 	// lost; nil where Althea cannot watch whole trees yet.
 	WatchTree func(dir string, changed func(path string)) (stop func(), err error)
+	// Windows is nil where Althea cannot move windows yet, as on Linux.
+	Windows WindowManager
 }

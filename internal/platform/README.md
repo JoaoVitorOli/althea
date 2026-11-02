@@ -32,4 +32,14 @@ These cost a bug each. Keep them in mind when changing the adapters.
   it waiting. The hook only feeds `hotkey.WinTap` and hands the toggle to the main thread.
 - **Injected keys are ignored by the Win key detection,** including Althea's own masking key.
   That also means automated tests cannot press the Win key for real; check it by hand.
+- **A window's rectangle is larger than the window.** Since Windows 10 it holds an invisible
+  border to grab it by, so moving by `GetWindowRect` leaves gaps at the screen's edges. Frames here
+  are DWM's extended frame bounds, and `Place` adds the border back. Crossing to a display of
+  another scale changes the border as the window arrives, hence its second pass.
+- **Store apps' windows belong to `ApplicationFrameHost.exe`.** The real app is the process of a
+  child window, and it opens again by `shell:AppsFolder\<AppUserModelID>`, not by its program.
+- **System callbacks are made once.** `windows.NewCallback` is never freed and has a limit, so
+  enumerations share package-level callbacks under a mutex rather than making closures per call.
+- **Binding a hotkey waits for the main thread.** A service unbinds as it stops, and the main
+  thread waits for services as Althea quits, so extensions' hotkeys go through a queue.
 - **System programs run by full path** (`System32\shutdown.exe`), never through `PATH`.
