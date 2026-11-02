@@ -31,13 +31,17 @@ func (*Extension) Commands(sdk.Context) []sdk.Command { return nil }
 // engine is a search engine; its address ends where the query goes.
 type engine struct {
 	id, title, address string
+	icon               sdk.Icon
 }
+
+//go:embed google.png
+var googleIcon []byte
 
 // engines are the engines to choose from, the default first.
 var engines = []engine{
-	{"duckduckgo", "DuckDuckGo", "https://duckduckgo.com/?q="},
-	{"google", "Google", "https://www.google.com/search?q="},
-	{"bing", "Bing", "https://www.bing.com/search?q="},
+	{"google", "Google", "https://www.google.com/search?q=", sdk.Icon{Data: googleIcon}},
+	{"duckduckgo", "DuckDuckGo", "https://duckduckgo.com/?q=", sdk.Icon{Glyph: "search"}},
+	{"bing", "Bing", "https://www.bing.com/search?q=", sdk.Icon{Glyph: "search"}},
 }
 
 // Preferences implements sdk.Configurable.
@@ -66,7 +70,7 @@ func chosen(ctx sdk.Context) engine {
 func (*Extension) Fallbacks(ctx sdk.Context, query string) []sdk.Item {
 	e := chosen(ctx)
 	return []sdk.Item{{
-		ID: "search", Title: ctx.T("search_for", "query", query), Subtitle: e.title, Icon: sdk.Icon{Glyph: "search"},
+		ID: "search", Title: ctx.T("search_for", "query", query), Subtitle: e.title, Icon: e.icon,
 		Actions: []sdk.Action{{Title: ctx.T("open"), Run: func(ctx sdk.Context) error {
 			ctx.Hide()
 			return ctx.Open(e.address + url.QueryEscape(query))
