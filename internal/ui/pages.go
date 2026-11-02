@@ -62,6 +62,8 @@ func (r *Root) Push(ext string, v sdk.View) {
 		p = newFormPage(r, ext, v)
 	case *sdk.Chat:
 		p = newChatPage(r, ext, v)
+	case *sdk.Converter:
+		p = newConverterPage(r, ext, v)
 	default:
 		return
 	}
@@ -77,6 +79,14 @@ func (r *Root) Pop() {
 	if len(r.stack) > 0 {
 		r.remove(r.stack[len(r.stack)-1])
 	}
+}
+
+// top is the page on top, nil with none.
+func (r *Root) top() page {
+	if len(r.stack) == 0 {
+		return nil
+	}
+	return r.stack[len(r.stack)-1]
 }
 
 // remove closes page p wherever it is in the stack.
@@ -221,6 +231,10 @@ func (r *Root) runPage(p page, i int) {
 	}
 	if ch, ok := p.(*chatPage); ok && i == 0 {
 		ch.submit()
+		return
+	}
+	if cv, ok := p.(*converterPage); ok && i == 0 {
+		cv.run()
 		return
 	}
 	if a.Run == nil || r.Host == nil {

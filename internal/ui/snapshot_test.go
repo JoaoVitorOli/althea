@@ -156,6 +156,25 @@ func TestSnapshotViews(t *testing.T) {
 		},
 		Actions: acts,
 	})
+	languages := []sdk.Option{{Value: "en", Title: "Inglês", Badge: "EN"}, {Value: "pt", Title: "Português", Badge: "PT"}, {Value: "tr", Title: "Turco", Badge: "TR"}}
+	translator := func(text string, run bool) *sdk.Converter {
+		return &sdk.Converter{
+			Title: "Traduzir · Bergamot (offline)", Placeholder: "Digite ou cole o texto…", ResultPlaceholder: "A tradução aparece aqui. Pressione Enter para traduzir.",
+			ConvertTitle: "Traduzir", Text: text, RunAtOnce: run,
+			From: sdk.Picker{Title: "Traduzir de", Placeholder: "Buscar idiomas…", Value: "auto", Options: append([]sdk.Option{{Value: "auto", Title: "Detectar idioma"}}, languages...)},
+			To:   sdk.Picker{Title: "Traduzir para", Placeholder: "Buscar idiomas…", Value: "pt", Options: languages},
+			Convert: func(_ sdk.Context, _ sdk.Conversion, show func(sdk.Converted)) error {
+				show(sdk.Converted{Text: "E aí?", From: "tr"})
+				return nil
+			},
+		}
+	}
+	shot("translator-empty", translator("", false))
+	shot("translator", translator("Naber?", true))
+	tt.Key(ui.Ctrl, ui.KeyL)
+	tt.Frame()
+	tt.Advance(time.Second)
+	save(t, tt, "view-translator-languages")
 	r.Reset()
 	tt.Frame()
 	_ = tt.Click("Buscar")

@@ -159,6 +159,15 @@ type download struct {
 
 func (d download) empty() bool { return !d.engine && len(d.pairs) == 0 }
 
+// key tells one download from another.
+func (d download) key() string {
+	key := fmt.Sprint(d.engine)
+	for _, p := range d.pairs {
+		key += " " + p.Key()
+	}
+	return key
+}
+
 func (e *Extension) lacking(pairs []Pair) download {
 	d := download{engine: !e.engineInstalled()}
 	for _, p := range pairs {

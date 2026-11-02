@@ -157,7 +157,11 @@ func (p *formPage) control(c *ui.Context, fd sdk.Field, first bool) {
 		for i, o := range fd.Options {
 			titles[i] = o.Title
 		}
-		el = ui.Select(c, p.choices[fd.ID], titles).Label(fd.Title)
+		if len(titles) > searchableOptions {
+			el = ui.Combobox(c, p.choices[fd.ID], titles).Label(fd.Title)
+		} else {
+			el = ui.Select(c, p.choices[fd.ID], titles).Label(fd.Title)
+		}
 	case sdk.TextArea:
 		el = ui.TextArea(c, p.text[fd.ID]).Placeholder(fd.Placeholder).Height(96)
 	default:

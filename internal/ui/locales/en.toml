@@ -18,6 +18,13 @@ empty = "Nothing here yet"
 required = "Required"
 submit = "Submit"
 send = "Send"
+choose = "Choose"
+swap = "Swap"
+copy = "Copy"
+copied = "Copied"
+copy_result = "Copy Result"
+paste_result = "Paste Result"
+detected = "{name} (detected)"
 chat_placeholder = "Say something…"
 
 [tray]

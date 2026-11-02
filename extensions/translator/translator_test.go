@@ -279,123 +279,154 @@ func TestNothingLeavesNorDownloadsAsItStarts(t *testing.T) {
 	}
 }
 
+// outcome is what a Converter shows after its calls of show.
+type outcome struct {
+	sdk.Converted
+	notes []string
+}
+
+// convert runs a Converter.
+func convert(ctx sdk.Context, v *sdk.Converter, text, from, to string) (outcome, error) {
+	var o outcome
+	err := v.Convert(ctx, sdk.Conversion{Text: text, From: from, To: to}, func(c sdk.Converted) {
+		o.Text, o.Note = c.Text, c.Note
+		if c.From != "" {
+			o.From = c.From
+		}
+		if c.To != "" {
+			o.To = c.To
+		}
+		if c.Note != "" {
+			o.notes = append(o.notes, c.Note)
+		}
+	})
+	return o, err
+}
+
+// open runs the command and returns the view it shows.
+func (f *fixture) open(t *testing.T) *sdk.Converter {
+	t.Helper()
+	if err := f.command(t, "translate").Run(f); err != nil {
+		t.Fatal(err)
+	}
+	return lastPushed[*sdk.Converter](t, f)
+}
+
+// install translates with a new view, agreeing to what it offers to download.
+func (f *fixture) install(t *testing.T, text, from, to string) string {
+	t.Helper()
+	v := f.open(t)
+	o, err := convert(f, v, text, from, to)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Text == "" {
+		if o, err = convert(f, v, text, from, to); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return o.Text
+}
+
 func TestOfflineAsksBeforeDownloadingThenTranslatesAndCaches(t *testing.T) {
 	f := setUp(t, "pt-BR")
 	f.Selection = "hello there my friend"
-	if err := f.command(t, "translate").Run(f); err != nil {
+	v := f.open(t)
+	if v.Text != "hello there my friend" || !v.RunAtOnce {
+		t.Fatalf("view %+v", v)
+	}
+	o, err := convert(f, v, v.Text, v.From.Value, v.To.Value)
+	if err != nil {
 		t.Fatal(err)
 	}
 	if len(f.Requests) != 0 {
 		t.Fatalf("downloaded before asking: %v", f.Requests)
 	}
-	offer := lastPushed[*sdk.Detail](t, f)
-	if offer.Stream != nil || !strings.Contains(offer.Markdown, "Inglês para Português") || !strings.Contains(offer.Markdown, "motor") {
-		t.Errorf("offer %q", offer.Markdown)
+	if o.From != "en" || o.Text != "" || !strings.Contains(o.Note, "Inglês para Português") ||
+		!strings.Contains(o.Note, "motor") || !strings.Contains(o.Note, "Pressione Enter") {
+		t.Errorf("offer %+v", o)
 	}
 
-	if err := offer.Actions[0].Run(f); err != nil {
-		t.Fatal(err)
-	}
-	result := lastPushed[*sdk.Detail](t, f)
-	if f.Popped != 1 || result.Title != "Inglês → Português" {
-		t.Errorf("popped %d, title %q", f.Popped, result.Title)
-	}
-	var shown []string
-	err := result.Stream(f, func(s string) { shown = append(shown, s) })
+	// Enter again, seeing the size, agrees.
+	o, err = convert(f, v, v.Text, v.From.Value, v.To.Value)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Contains(shown, "Baixando… 100%") {
-		t.Errorf("no progress shown: %q", shown)
+	if !slices.Contains(o.notes, "Baixando… 100%") {
+		t.Errorf("no progress shown: %q", o.notes)
 	}
-	if got := shown[len(shown)-1]; got != `\[en-pt\] hello there my friend` {
-		t.Errorf("shown %q", got)
-	}
-	if !strings.Contains(result.Metadata[0].Text, "detectado") {
-		t.Errorf("metadata %+v", result.Metadata)
+	if o.Text != "[en-pt] hello there my friend" || o.Note != "" {
+		t.Errorf("shown %+v", o)
 	}
 
-	// Copy gives the translation without Markdown's escapes.
-	if err := result.Actions[0].Run(f); err != nil {
-		t.Fatal(err)
-	}
-	if got := f.Copied[len(f.Copied)-1]; got != "[en-pt] hello there my friend" {
-		t.Errorf("copied %q", got)
-	}
-
-	// Again: no offer, no download, from the cache.
+	// Again, in a new view: no offer, no download, from the cache.
 	requests := len(f.Requests)
-	if err := f.command(t, "translate").Run(f); err != nil {
-		t.Fatal(err)
-	}
-	again := lastPushed[*sdk.Detail](t, f)
-	if again.Stream == nil {
-		t.Fatal("offered again what is there")
-	}
-	if got, err := stream(f, again); err != nil || got != `\[en-pt\] hello there my friend` {
-		t.Errorf("shown %q, err %v", got, err)
+	if o, err = convert(f, f.open(t), v.Text, "auto", "pt"); err != nil || o.Text != "[en-pt] hello there my friend" {
+		t.Errorf("shown %+v, err %v", o, err)
 	}
 	if len(f.Requests) != requests {
 		t.Errorf("requests %v", f.Requests)
 	}
 }
 
-// install downloads en↔pt and en→es through the views.
-func (f *fixture) install(t *testing.T, text, from, to string) string {
-	t.Helper()
-	form := f.form(t)
-	if err := form.Submit(f, sdk.Values{"text": text, "from": from, "to": to}); err != nil {
+func TestAgreeingToOneDownloadIsNotAgreeingToAnother(t *testing.T) {
+	f := setUp(t, "en")
+	v := f.open(t)
+	if _, err := convert(f, v, "good morning", "en", "pt"); err != nil {
 		t.Fatal(err)
 	}
-	d := lastPushed[*sdk.Detail](t, f)
-	if d.Stream == nil {
-		if err := d.Actions[0].Run(f); err != nil {
-			t.Fatal(err)
-		}
-		d = lastPushed[*sdk.Detail](t, f)
+	if o, err := convert(f, v, "good morning", "en", "es"); err != nil || o.Note == "" || len(f.Requests) != 0 {
+		t.Errorf("shown %+v, err %v, requests %v", o, err, f.Requests)
 	}
-	got, err := stream(f, d)
+}
+
+func TestItStartsOnTheLanguageLastChosenUntilThePreferenceChanges(t *testing.T) {
+	f := setUp(t, "en")
+	if got := f.install(t, "good morning", "en", "es"); got != "[en-es] good morning" {
+		t.Errorf("shown %q", got)
+	}
+	if got := f.open(t).To.Value; got != "es" {
+		t.Errorf("target %q, want the last one", got)
+	}
+	f.Prefs["target"] = "pt"
+	if got := f.open(t).To.Value; got != "pt" {
+		t.Errorf("target %q, want the preference just set", got)
+	}
+}
+
+func TestTextAlreadyInTheTargetGoesToAnotherLanguage(t *testing.T) {
+	f := setUp(t, "en")
+	v := f.open(t)
+	if v.To.Value != "en" {
+		t.Fatalf("target %q", v.To.Value)
+	}
+	o, err := convert(f, v, "the house is in the city and it was good", "auto", "en")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return got
-}
-
-func (f *fixture) form(t *testing.T) *sdk.Form {
-	t.Helper()
-	f.Selection = ""
-	if err := f.command(t, "translate").Run(f); err != nil {
-		t.Fatal(err)
+	if o.To != "pt" || o.From != "en" {
+		t.Errorf("shown %+v", o)
 	}
-	return lastPushed[*sdk.Form](t, f)
 }
 
-func TestWithoutASelectionItAsksWhatToTranslateAndRemembersTheLanguage(t *testing.T) {
+func TestChoosingTheSameLanguageSaysSo(t *testing.T) {
 	f := setUp(t, "en")
-	form := f.form(t)
-	if form.Fields[2].Default != "pt" && form.Fields[2].Default != "en" {
-		t.Errorf("target %q", form.Fields[2].Default)
-	}
-	if got := f.install(t, "good morning", "en", "es"); got != `\[en-es\] good morning` {
-		t.Errorf("shown %q", got)
-	}
-	if got := f.form(t).Fields[2].Default; got != "es" {
-		t.Errorf("target %q, want the last one", got)
+	_, err := convert(f, f.open(t), "hi", "pt", "pt")
+	if err == nil || !strings.Contains(err.Error(), "in Portuguese already") {
+		t.Errorf("err %v", err)
 	}
 }
 
 func TestOtherPairsGoThroughEnglish(t *testing.T) {
 	f := setUp(t, "en")
-	got := f.install(t, "bom dia", "pt", "es")
-	if got != `\[en-es\] \[pt-en\] bom dia` {
+	if got := f.install(t, "bom dia", "pt", "es"); got != "[en-es] [pt-en] bom dia" {
 		t.Errorf("shown %q", got)
 	}
 }
 
 func TestAPairWithNoModelSaysSoWithoutDownloading(t *testing.T) {
 	f := setUp(t, "en")
-	form := f.form(t)
-	err := form.Submit(f, sdk.Values{"text": "olá", "from": "pt", "to": "fr"})
+	_, err := convert(f, f.open(t), "olá", "pt", "fr")
 	if err == nil || !strings.Contains(err.Error(), "no offline model from Portuguese to French") {
 		t.Errorf("err %v", err)
 	}
@@ -407,14 +438,11 @@ func TestAPairWithNoModelSaysSoWithoutDownloading(t *testing.T) {
 func TestADownloadThatDoesNotVerifyIsThrownAway(t *testing.T) {
 	f := setUp(t, "en")
 	f.files.contents["/en-pt/model"] = []byte("model of en-XX")
-	form := f.form(t)
-	if err := form.Submit(f, sdk.Values{"text": "hi", "from": "en", "to": "pt"}); err != nil {
+	v := f.open(t)
+	if _, err := convert(f, v, "hi", "en", "pt"); err != nil {
 		t.Fatal(err)
 	}
-	if err := lastPushed[*sdk.Detail](t, f).Actions[0].Run(f); err != nil {
-		t.Fatal(err)
-	}
-	_, err := stream(f, lastPushed[*sdk.Detail](t, f))
+	_, err := convert(f, v, "hi", "en", "pt")
 	if err == nil || !strings.Contains(err.Error(), "did not match") {
 		t.Fatalf("err %v", err)
 	}
@@ -450,11 +478,7 @@ func TestAnEngineChangedSinceTheDownloadDoesNotRun(t *testing.T) {
 	if err := os.WriteFile(engine, data, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	form := f.form(t)
-	if err := form.Submit(f, sdk.Values{"text": "second", "from": "en", "to": "pt"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := stream(f, lastPushed[*sdk.Detail](t, f)); err == nil {
+	if _, err := convert(f, f.open(t), "second", "en", "pt"); err == nil {
 		t.Error("the changed engine ran")
 	}
 }
@@ -462,18 +486,12 @@ func TestAnEngineChangedSinceTheDownloadDoesNotRun(t *testing.T) {
 func TestStoppingATranslationStopsTheEngineAndTheNextStartsItAgain(t *testing.T) {
 	f := setUp(t, "en")
 	f.install(t, "warm up", "en", "pt")
-	form := f.form(t)
-	if err := form.Submit(f, sdk.Values{"text": "hang", "from": "en", "to": "pt"}); err != nil {
-		t.Fatal(err)
-	}
-	d := lastPushed[*sdk.Detail](t, f)
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	s := contextWith(ctx, f.Context)
-	if _, err := stream(s, d); !errors.Is(err, context.DeadlineExceeded) {
+	if _, err := convert(contextWith(ctx, f.Context), f.open(t), "hang", "en", "pt"); !errors.Is(err, context.DeadlineExceeded) {
 		t.Errorf("err %v", err)
 	}
-	if got := f.install(t, "after", "en", "pt"); got != `\[en-pt\] after` {
+	if got := f.install(t, "after", "en", "pt"); got != "[en-pt] after" {
 		t.Errorf("shown %q", got)
 	}
 }
@@ -481,15 +499,11 @@ func TestStoppingATranslationStopsTheEngineAndTheNextStartsItAgain(t *testing.T)
 func TestAnEngineThatDiesIsSaidPlainlyAndStartsAgain(t *testing.T) {
 	f := setUp(t, "en")
 	f.install(t, "warm up", "en", "pt")
-	form := f.form(t)
-	if err := form.Submit(f, sdk.Values{"text": "die", "from": "en", "to": "pt"}); err != nil {
-		t.Fatal(err)
-	}
-	_, err := stream(f, lastPushed[*sdk.Detail](t, f))
+	_, err := convert(f, f.open(t), "die", "en", "pt")
 	if err == nil || !strings.Contains(err.Error(), "offline translation failed") {
 		t.Errorf("err %v", err)
 	}
-	if got := f.install(t, "after", "en", "pt"); got != `\[en-pt\] after` {
+	if got := f.install(t, "after", "en", "pt"); got != "[en-pt] after" {
 		t.Errorf("shown %q", got)
 	}
 }
@@ -508,11 +522,11 @@ func TestDeepLSendsWhatItShouldAndNothingWithoutAKey(t *testing.T) {
 	f.e.DeepLBase = srv.URL
 	f.Prefs["provider"] = "deepl"
 
-	f.Selection = "good morning"
-	if err := f.command(t, "translate").Run(f); err != nil {
-		t.Fatal(err)
+	v := f.open(t)
+	if v.RunAtOnce {
+		t.Error("ran with no text")
 	}
-	if _, err := stream(f, lastPushed[*sdk.Detail](t, f)); err == nil || !strings.Contains(err.Error(), "DeepL needs an API key") {
+	if _, err := convert(f, v, "good morning", "en", "pt"); err == nil || !strings.Contains(err.Error(), "DeepL needs an API key") {
 		t.Fatalf("err %v", err)
 	}
 	if len(f.Requests) != 0 {
@@ -520,9 +534,9 @@ func TestDeepLSendsWhatItShouldAndNothingWithoutAKey(t *testing.T) {
 	}
 
 	f.Secrets["deepl_key"] = "abc:fx"
-	got, err := stream(f, lastPushed[*sdk.Detail](t, f))
-	if err != nil || got != "Bom dia" {
-		t.Fatalf("shown %q, err %v", got, err)
+	o, err := convert(f, v, "good morning", "en", "pt")
+	if err != nil || o.Text != "Bom dia" {
+		t.Fatalf("shown %+v, err %v", o, err)
 	}
 	if auth != "DeepL-Auth-Key abc:fx" || heard["target_lang"] != "PT-BR" || heard["source_lang"] != "EN" {
 		t.Errorf("auth %q, body %v", auth, heard)
@@ -543,21 +557,17 @@ func TestLibreTranslateAsksForItsServer(t *testing.T) {
 	}))
 	defer srv.Close()
 	f.Prefs["provider"] = "libretranslate"
-	f.Selection = "hello there"
-	if err := f.command(t, "translate").Run(f); err != nil {
-		t.Fatal(err)
-	}
-	d := lastPushed[*sdk.Detail](t, f)
-	if _, err := stream(f, d); err == nil || !strings.Contains(err.Error(), "LibreTranslate server") {
+	v := f.open(t)
+	if _, err := convert(f, v, "hello there", "en", "pt"); err == nil || !strings.Contains(err.Error(), "LibreTranslate server") {
 		t.Fatalf("err %v", err)
 	}
 	f.Prefs["libretranslate_url"] = srv.URL + "/"
 	f.Secrets["libretranslate_key"] = "k"
-	got, err := stream(f, d)
-	if err != nil || got != "Olá" {
-		t.Fatalf("shown %q, err %v", got, err)
+	o, err := convert(f, v, "hello there", "en", "pt")
+	if err != nil || o.Text != "Olá" {
+		t.Fatalf("shown %+v, err %v", o, err)
 	}
-	if heard["target"] != "pt" && heard["target"] != "en" || heard["api_key"] != "k" {
+	if heard["target"] != "pt" || heard["api_key"] != "k" {
 		t.Errorf("body %v", heard)
 	}
 }
@@ -582,9 +592,14 @@ func TestTheAIProviderTranslatesAsItWrites(t *testing.T) {
 	if err := e.Commands(ctx)[0].Run(ctx); err != nil {
 		t.Fatal(err)
 	}
-	d := ctx.Pushed[0].(*sdk.Detail)
+	v := ctx.Pushed[0].(*sdk.Converter)
 	var shown []string
-	if err := d.Stream(ctx, func(s string) { shown = append(shown, s) }); err != nil {
+	err := v.Convert(ctx, sdk.Conversion{Text: v.Text, From: "auto", To: "pt"}, func(c sdk.Converted) {
+		if c.Text != "" {
+			shown = append(shown, c.Text)
+		}
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(shown, []string{"Bom", "Bom dia", "Bom dia"}) {
@@ -595,26 +610,20 @@ func TestTheAIProviderTranslatesAsItWrites(t *testing.T) {
 	}
 
 	// The cache answers the same again, without asking.
-	if err := d.Stream(ctx, func(string) {}); err != nil || calls != 1 {
+	if _, err := convert(ctx, v, v.Text, "auto", "pt"); err != nil || calls != 1 {
 		t.Errorf("calls %d, err %v", calls, err)
 	}
 }
 
-func TestTranslatingBackSwapsTheLanguages(t *testing.T) {
-	f := setUp(t, "en")
-	f.install(t, "hello", "en", "pt")
-	if err := lastPushed[*sdk.Detail](t, f).Actions[2].Run(f); err != nil {
-		t.Fatal(err)
+func TestLanguagesCarryWhatToSearchThemBy(t *testing.T) {
+	f := setUp(t, "pt-BR")
+	v := f.open(t)
+	if v.From.Options[0].Value != "auto" || v.From.Options[0].Title != "Detectar idioma" {
+		t.Errorf("from %+v", v.From.Options[0])
 	}
-	d := lastPushed[*sdk.Detail](t, f)
-	if d.Stream == nil {
-		if err := d.Actions[0].Run(f); err != nil {
-			t.Fatal(err)
-		}
-		d = lastPushed[*sdk.Detail](t, f)
-	}
-	if got, err := stream(f, d); err != nil || got != `\[pt-en\] \[en-pt\] hello` {
-		t.Errorf("shown %q, err %v", got, err)
+	i := slices.IndexFunc(v.To.Options, func(o sdk.Option) bool { return o.Value == "pt" })
+	if i < 0 || v.To.Options[i].Title != "Português" || v.To.Options[i].Badge != "PT" {
+		t.Errorf("to %+v", v.To.Options)
 	}
 }
 
@@ -664,12 +673,15 @@ func TestOfflineWithoutAnEngineInThisVersionSaysSo(t *testing.T) {
 	e := translator.New(translator.Platform{Dir: dir, Engine: &translator.File{}})
 	ctx := sdktest.New(t, e, "en")
 	ctx.Selection = "hello there"
-	err := e.Commands(ctx)[0].Run(ctx)
+	if err := e.Commands(ctx)[0].Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	_, err := convert(ctx, ctx.Pushed[0].(*sdk.Converter), "hello there", "en", "pt")
 	if err == nil || !strings.Contains(err.Error(), "not available in this version") {
 		t.Errorf("err %v", err)
 	}
-	if len(ctx.Pushed) != 0 || len(ctx.Requests) != 0 {
-		t.Errorf("pushed %v, requests %v", ctx.Pushed, ctx.Requests)
+	if len(ctx.Requests) != 0 {
+		t.Errorf("requests %v", ctx.Requests)
 	}
 }
 

@@ -18,6 +18,13 @@ empty = "Nada aqui ainda"
 required = "Obrigatório"
 submit = "Enviar"
 send = "Enviar"
+choose = "Escolher"
+swap = "Inverter"
+copy = "Copiar"
+copied = "Copiado"
+copy_result = "Copiar resultado"
+paste_result = "Colar resultado"
+detected = "{name} (detectado)"
 chat_placeholder = "Diga algo…"
 
 [tray]

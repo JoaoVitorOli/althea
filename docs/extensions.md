@@ -162,6 +162,27 @@ When `Submit` returns nil the form closes; if it pushed a view, that view takes 
 place. An error keeps the form open and shows the error. Checkbox values are "true" or
 "false" (`v.Bool(id)`), dropdown values are the chosen option's `Value`.
 
+### Converter
+
+Turns a text into another, as the Translator does: two choices with a swap between them, the text,
+and what it became. The user finds an option by searching for it. `Convert` runs on Enter, never as
+the user types, since it may send the text somewhere, and `show` replaces what shows:
+
+```go
+&sdk.Converter{
+	Title: "Translate",
+	From:  sdk.Picker{Title: "From", Value: "en", Options: languages},
+	To:    sdk.Picker{Title: "To", Value: "pt", Options: languages},
+	Convert: func(ctx sdk.Context, c sdk.Conversion, show func(sdk.Converted)) error {
+		out, err := translate(ctx, c.Text, c.From, c.To)
+		show(sdk.Converted{Text: out})
+		return err
+	},
+}
+```
+
+A form's `Dropdown` with more than a few options can be searched too, by typing in it.
+
 ## Storage
 
 `ctx.Storage()` is a key-value store of your own in Althea's database, kept across runs and

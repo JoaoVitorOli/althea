@@ -1,7 +1,7 @@
 package sdk
 
 // View is what a command shows in the launcher in place of the root search: a *List, a *Grid,
-// a *Detail, a *Form or a *Chat. An action shows one with Context.Push; Escape goes back to the view
+// a *Detail, a *Form, a *Chat or a *Converter. An action shows one with Context.Push; Escape goes back to the view
 // before it. The host draws views with the theme, the motion and the keys of every other view,
 // so an extension says what to show, not how. See docs/adr/0004-declarative-views.md.
 type View interface{ isView() }
@@ -138,10 +138,64 @@ type ChatMessage struct {
 	Text string
 }
 
-// Option is a choice of a Dropdown.
+// Converter turns a text into another, as translating does: two choices with a swap between them
+// on top, the text below them and what it became under it. The user searches a choice's options.
+// Enter runs it, never typing, since Convert may send the text somewhere. The host offers to copy and
+// paste the result.
+type Converter struct {
+	// Title names the view in the footer.
+	Title string
+	// Placeholder is the text's while it is empty, and ResultPlaceholder the result's.
+	Placeholder       string
+	ResultPlaceholder string
+	// ConvertTitle names what Enter does in the footer; "Submit" when empty.
+	ConvertTitle string
+	// Text is the text it starts with, and RunAtOnce runs it on that as the view opens.
+	Text      string
+	RunAtOnce bool
+	// From and To are the choices. Swapping is offered between values both have.
+	From, To Picker
+	// Convert runs on what was asked. Each call of show replaces what shows. Escape or closing the
+	// view cancels ctx. Its error shows in place of the result. It runs off the main thread, and show
+	// may be called from any goroutine until Convert returns.
+	Convert func(ctx Context, c Conversion, show func(Converted)) error
+}
+
+// Picker is a choice of a Converter among options to search through.
+type Picker struct {
+	// Title names the choice.
+	Title string
+	// Placeholder is the search field's text while it is empty.
+	Placeholder string
+	// Value is the option it starts on.
+	Value   string
+	Options []Option
+}
+
+// Conversion is what a Converter is asked: a text and the choices' values.
+type Conversion struct {
+	Text, From, To string
+}
+
+// Converted is what a Converter shows.
+type Converted struct {
+	// Text is the result, plain text. Note says something else in its place, as how far a download
+	// is; both are replaced by each call.
+	Text string
+	Note string
+	// From, when set, says what From turned out to be, when an option leaves it to Convert to find
+	// out, as detecting a language. To, when set, changes To, as when the text is in it already. Both
+	// stay as they are otherwise.
+	From, To string
+}
+
+// Option is a choice of a Dropdown or a Picker.
 type Option struct {
 	Value string
 	Title string
+	// Badge is a very short text beside the title in a Picker, as a language's code. It can be
+	// searched for.
+	Badge string
 }
 
 // Values are a submitted form's values, by field ID.
@@ -155,3 +209,5 @@ func (*Grid) isView()   {}
 func (*Detail) isView() {}
 func (*Form) isView()   {}
 func (*Chat) isView()   {}
+
+func (*Converter) isView() {}

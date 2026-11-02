@@ -95,7 +95,7 @@ of them may ask for confirmation first. [extensions.md](extensions.md) is the gu
 
 ### Views
 
-Extensions push view values (`List`, `Grid`, `Detail`, `Form`, `Chat`); `ui.Root` keeps them in a stack
+Extensions push view values (`List`, `Grid`, `Detail`, `Form`, `Chat`, `Converter`); `ui.Root` keeps them in a stack
 of pages over the root search and draws the one on top. Extension code that a page calls
 (loading items, searching, submitting a form, running an action) goes through `ui.Host`, which
 `app` implements: it runs on a goroutine with a cancellable context, its panics are recovered,

@@ -1,3 +1,6 @@
+[picker]
+search = "Buscar idiomas…"
+
 [prefs]
 provider = "Traduzir com"
 provider_info = "Offline mantém seu texto neste computador. Os outros o enviam ao provedor quando você traduz."
@@ -16,34 +19,19 @@ subtitle = "Traduz o texto selecionado, ou o que você digitar"
 keywords = "translate translator language translation traduzir tradutor idioma tradução"
 fallback = "Traduzir \"{query}\""
 submit = "Traduzir"
-no_text = "Não há nada para traduzir."
+placeholder = "Digite ou cole o texto…"
+result_placeholder = "A tradução aparece aqui. Pressione Enter para traduzir."
+from = "Traduzir de"
+to = "Traduzir para"
+detect = "Detectar idioma"
 same = "O texto já está em {language}. Escolha outro idioma."
 
-[form]
-text = "Texto"
-from = "De"
-to = "Para"
-detect = "Detectar"
-
-[result]
-title = "{from} → {to}"
-from = "De"
-to = "Para"
-provider = "Traduzido com"
-detected = "{language} (detectado)"
-copy = "Copiar tradução"
-copied = "Copiado"
-paste = "Colar tradução"
-back = "Traduzir de volta"
-change = "Trocar idiomas"
-
 [offline]
-title = "Baixar para traduzir offline"
 body = "Traduzir offline pede um download de {size}, uma vez só:"
 engine_line = "O motor de tradução, {size}, dos lançamentos do Althea"
 pair_line = "{from} para {to}, {size}, da Mozilla"
 after = "Cada arquivo é verificado antes de ser usado. Depois disso, seu texto nunca sai deste computador."
-download = "Baixar {size} e traduzir"
+confirm = "Pressione Enter para baixar {size} e traduzir."
 no_engine = "O motor offline ainda não está disponível nesta versão. Escolha um provedor online nas preferências do Tradutor."
 no_route = "Não há modelo offline de {from} para {to}. Escolha um provedor online nas preferências do Tradutor."
 failed = "A tradução offline falhou. Tente de novo, ou veja o log."
