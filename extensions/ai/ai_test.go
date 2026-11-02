@@ -552,3 +552,22 @@ func TestTheFolderOpensWithAnExampleThatIsNotACommand(t *testing.T) {
 		t.Errorf("title %q", c.Title)
 	}
 }
+
+func TestCopyingBeforeAWordCameLeavesTheClipboard(t *testing.T) {
+	srv, _ := openAI(t, "later")
+	e := extension(t)
+	ctx := context(t, e, "openai", srv.URL)
+	ctx.Selection = "text"
+	if err := commandNamed(t, e, ctx, "command/summarize").Run(ctx); err != nil {
+		t.Fatal(err)
+	}
+	d := ctx.Pushed[0].(*sdk.Detail)
+	for _, i := range []int{0, 1} {
+		if err := d.Actions[i].Run(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(ctx.Copied) != 0 || len(ctx.Pasted) != 0 {
+		t.Errorf("copied %q, pasted %v", ctx.Copied, ctx.Pasted)
+	}
+}

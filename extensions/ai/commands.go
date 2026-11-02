@@ -207,11 +207,19 @@ func (e *Extension) commandView(ctx sdk.Context, req Request, title string) *sdk
 		},
 		Actions: []sdk.Action{
 			{Title: ctx.T("chat.copy"), Shortcut: "Ctrl+Shift+C", Run: func(ctx sdk.Context) error {
+				text := a.String()
+				if text == "" {
+					return nil // still on its way: the clipboard stays as it is
+				}
 				ctx.Toast(ctx.T("chat.copied"))
-				return ctx.CopyText(a.String())
+				return ctx.CopyText(text)
 			}},
 			{Title: ctx.T("chat.paste"), Shortcut: "Ctrl+Shift+V", Run: func(ctx sdk.Context) error {
-				return ctx.Paste(sdk.Clip{Text: a.String()})
+				text := a.String()
+				if text == "" {
+					return nil
+				}
+				return ctx.Paste(sdk.Clip{Text: text})
 			}},
 			{Title: ctx.T("commands.continue"), Shortcut: "Ctrl+T", Run: func(ctx sdk.Context) error {
 				c := newConversation()
