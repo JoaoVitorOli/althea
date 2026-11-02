@@ -100,5 +100,9 @@ func Parse(s string) (Binding, error) {
 	if len(parts) < 2 || slices.Contains(modifiers, key) {
 		return Binding{}, errors.New("hotkey: a combination needs one or more modifiers and a key, such as Alt+Space")
 	}
+	// One spelling for each combination, so that two can be compared.
+	slices.SortStableFunc(parts[:len(parts)-1], func(a, b string) int {
+		return slices.Index(modifiers, a) - slices.Index(modifiers, b)
+	})
 	return Binding{Accelerator: strings.Join(parts, "+")}, nil
 }

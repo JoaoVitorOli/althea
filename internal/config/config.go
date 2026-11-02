@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -52,6 +53,9 @@ type Theme struct {
 type Hotkey struct {
 	// Toggle shows and hides the launcher: a combination such as "Alt+Space", or "Win".
 	Toggle string `toml:"toggle"`
+	// Commands run commands of the extensions from anywhere: a combination by the command's key,
+	// "<extension>/<command>".
+	Commands map[string]string `toml:"commands"`
 }
 
 // Window holds the launcher window's behavior.
@@ -123,8 +127,11 @@ type file struct {
 	Schema  int     `toml:"schema"`
 	General General `toml:"general"`
 	Theme   Theme   `toml:"theme"`
-	Hotkey  Hotkey  `toml:"hotkey"`
-	Window  struct {
+	Hotkey  struct {
+		Toggle   string         `toml:"toggle"`
+		Commands map[string]any `toml:"commands"`
+	} `toml:"hotkey"`
+	Window struct {
 		ResetAfter *string `toml:"reset_after"`
 	} `toml:"window"`
 	Extensions map[string]map[string]any `toml:"extensions"`
@@ -146,7 +153,8 @@ func Load(path string) (s Settings, problems []Problem, err error) {
 
 func parse(data []byte) (Settings, []Problem, error) {
 	defaults := Defaults()
-	f := file{General: defaults.General, Theme: defaults.Theme, Hotkey: defaults.Hotkey}
+	f := file{General: defaults.General, Theme: defaults.Theme}
+	f.Hotkey.Toggle = defaults.Hotkey.Toggle
 	var problems []Problem
 
 	err := toml.NewDecoder(bytes.NewReader(data)).DisallowUnknownFields().Decode(&f)
@@ -172,7 +180,10 @@ func parse(data []byte) (Settings, []Problem, error) {
 		problems = append(problems, Problem{Line: lines[key], Key: key, Message: message})
 	}
 
-	s := Settings{General: f.General, Theme: f.Theme, Hotkey: f.Hotkey, Window: defaults.Window, Extensions: f.Extensions}
+	s := Settings{
+		General: f.General, Theme: f.Theme, Hotkey: Hotkey{Toggle: f.Hotkey.Toggle},
+		Window: defaults.Window, Extensions: f.Extensions,
+	}
 	if !slices.Contains(Languages, s.General.Language) {
 		invalid("general.language", `must be "system", "en" or "pt-BR"`)
 		s.General.Language = defaults.General.Language
@@ -189,6 +200,18 @@ func parse(data []byte) (Settings, []Problem, error) {
 	if _, err := hotkey.Parse(s.Hotkey.Toggle); err != nil {
 		invalid("hotkey.toggle", `must be "Win" or a combination such as "Alt+Space"`)
 		s.Hotkey.Toggle = defaults.Hotkey.Toggle
+	}
+	for _, command := range slices.Sorted(maps.Keys(f.Hotkey.Commands)) {
+		text, ok := f.Hotkey.Commands[command].(string)
+		b, err := hotkey.Parse(text)
+		if !ok || err != nil || b.WinKey {
+			invalid("hotkey.commands."+command, `must be a combination such as "Ctrl+Alt+Left"`)
+			continue
+		}
+		if s.Hotkey.Commands == nil {
+			s.Hotkey.Commands = map[string]string{}
+		}
+		s.Hotkey.Commands[command] = text
 	}
 	if text := f.Window.ResetAfter; text != nil {
 		d, err := time.ParseDuration(*text)

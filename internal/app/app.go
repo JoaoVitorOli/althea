@@ -95,8 +95,10 @@ type althea struct {
 	keys *keyboard
 	// shortcuts binds the extensions' hotkeys, in order.
 	shortcuts serial
-	hotkey    string
-	unbind    func()
+	// commands are the hotkeys the user gave commands.
+	commands commandHotkeys
+	hotkey   string
+	unbind   func()
 }
 
 func (a *althea) ready() {
@@ -124,6 +126,8 @@ func (a *althea) ready() {
 		a.log.Error("search not set up", "err", err)
 	}
 	a.bindHotkey(s.Hotkey.Toggle)
+	a.commands = commandHotkeys{bind: a.bindCommandHotkey, run: a.runCommand}
+	a.commands.sync(wantedHotkeys(s.Hotkey, a.log))
 	a.syncLogin(s.General.StartAtLogin)
 	a.setUpTray()
 	a.watchThemes()
@@ -160,9 +164,7 @@ func (a *althea) onboarded(ch ui.Choices) {
 // apply brings the running app in step with reloaded settings.
 func (a *althea) apply(s config.Settings) {
 	a.launcher.SetResetAfter(time.Duration(s.Window.ResetAfter))
-	if s.Hotkey.Toggle != a.hotkey {
-		a.bindHotkey(s.Hotkey.Toggle)
-	}
+	a.applyHotkeys(s.Hotkey)
 	a.syncLogin(s.General.StartAtLogin)
 	a.reloadTheme()
 }
@@ -207,6 +209,21 @@ func over(fg, bg theme.Color) platform.Color {
 		return uint8(v) //nolint:gosec // a weighted mean of two bytes is a byte
 	}
 	return platform.Color{R: mix(fg.R, bg.R), G: mix(fg.G, bg.G), B: mix(fg.B, bg.B)}
+}
+
+// applyHotkeys binds the hotkeys of reloaded settings. The launcher's and a command's may swap
+// keys, and the system gives a key to one at a time: the commands let go of theirs first, and
+// the rest follows on the main thread once they did, which nothing here waits for.
+func (a *althea) applyHotkeys(s config.Hotkey) {
+	a.commands.release()
+	a.shortcuts.do(func() {
+		a.launcher.Window().Update(func() {
+			if s.Toggle != a.hotkey {
+				a.bindHotkey(s.Toggle)
+			}
+			a.commands.sync(wantedHotkeys(s, a.log))
+		})
+	})
 }
 
 // bindHotkey makes shortcut show and hide the launcher, in place of the one bound before.

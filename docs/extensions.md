@@ -175,6 +175,13 @@ Kinds: `TextPreference`, `NumberPreference`, `BoolPreference`, `ChoicePreference
 running any of the extension's commands first shows a form asking for it, then runs the
 command.
 
+## Hotkeys
+
+Users can give any command a hotkey under **Command Hotkeys**, with nothing to do on your side.
+The binding is kept by the command's `ID`, so choose it once, as you do the extension's. The
+command runs with the launcher hidden unless it pushes a view, so write `Run` to work from
+anywhere, and don't count on a toast being seen right away.
+
 ## Translations
 
 Put `en.toml` and `pt-BR.toml` in a `locales/` folder, embed it, and return it as

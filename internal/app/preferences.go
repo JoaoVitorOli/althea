@@ -13,6 +13,7 @@ import (
 	"github.com/JoaoVitorOli/althea/internal/config"
 	"github.com/JoaoVitorOli/althea/internal/platform"
 	"github.com/JoaoVitorOli/althea/internal/prefs"
+	"github.com/JoaoVitorOli/althea/internal/registry"
 	"github.com/JoaoVitorOli/althea/sdk"
 )
 
@@ -187,6 +188,10 @@ type settingsExtension struct {
 	prefs *preferences
 	// exts are the extensions with preferences, in the order of the built-ins.
 	exts []sdk.Manifest
+	// commands returns every extension's commands, to give them hotkeys; nil offers none.
+	commands func() []registry.Result
+	// titles names the extensions, by ID.
+	titles map[string]string
 }
 
 func (s *settingsExtension) Manifest() sdk.Manifest {
@@ -194,17 +199,28 @@ func (s *settingsExtension) Manifest() sdk.Manifest {
 }
 
 func (s *settingsExtension) Commands(ctx sdk.Context) []sdk.Command {
-	if len(s.exts) == 0 {
-		return nil
+	var cmds []sdk.Command
+	if len(s.exts) > 0 {
+		cmds = append(cmds, sdk.Command{
+			ID: "extension-preferences", Title: ctx.T("preferences.title"), Subtitle: ctx.T("preferences.subtitle"),
+			Icon: sdk.Icon{Glyph: "settings"}, Keywords: strings.Fields(ctx.T("preferences.keywords")),
+			Run: func(ctx sdk.Context) error {
+				ctx.Push(s.list(ctx))
+				return nil
+			},
+		})
 	}
-	return []sdk.Command{{
-		ID: "extension-preferences", Title: ctx.T("preferences.title"), Subtitle: ctx.T("preferences.subtitle"),
-		Icon: sdk.Icon{Glyph: "settings"}, Keywords: strings.Fields(ctx.T("preferences.keywords")),
-		Run: func(ctx sdk.Context) error {
-			ctx.Push(s.list(ctx))
-			return nil
-		},
-	}}
+	if s.commands != nil {
+		cmds = append(cmds, sdk.Command{
+			ID: "command-hotkeys", Title: ctx.T("hotkeys.title"), Subtitle: ctx.T("hotkeys.subtitle"),
+			Icon: sdk.Icon{Glyph: "command"}, Keywords: strings.Fields(ctx.T("hotkeys.keywords")),
+			Run: func(ctx sdk.Context) error {
+				ctx.Push(s.hotkeyList(ctx))
+				return nil
+			},
+		})
+	}
+	return cmds
 }
 
 // list lists the extensions with preferences.

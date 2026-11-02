@@ -33,3 +33,7 @@ reset_after = "1m30s"
 # [extensions."althea.weather"]
 # units = "metric"
 # Secrets, as API keys, are kept in Windows Credential Manager, never here.
+
+# Any command can have a hotkey of its own, which "Command Hotkeys" in Althea writes, as:
+# [hotkey.commands]
+# "althea.windows/left" = "Ctrl+Alt+Left"

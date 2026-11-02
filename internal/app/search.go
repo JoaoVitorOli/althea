@@ -70,6 +70,7 @@ func (a *althea) setUpSearch() error {
 		return err
 	}
 	exts = append(exts, settings)
+	settings.titles = titles(exts)
 	a.background = newServices(a, exts)
 	a.prefs.changed = a.background.restart
 
@@ -84,6 +85,7 @@ func (a *althea) setUpSearch() error {
 		Log:     a.log,
 	})
 	a.search = s
+	settings.commands = s.registry.Commands
 	a.root.OnQuery = s.query
 	a.root.OnRun = s.run
 	a.root.Host = viewHost{a}
@@ -210,19 +212,28 @@ func (s *searcher) run(res registry.Result, action int) {
 				s.a.log.Warn("frecency", "err", err)
 			}
 		}
-		if act.Run == nil {
-			return
-		}
-		ctx := s.a.extensionContext(context.Background(), res.Extension)
-		if s.a.prefs != nil && len(s.a.prefs.missing(res.Extension)) > 0 {
-			s.askPreferences(res, act)
-			return
-		}
-		if err := act.Run(ctx); err != nil {
-			s.a.log.Warn("action failed", "extension", res.Extension, "action", act.Title, "err", err)
-			ctx.Toast(err.Error())
-		}
+		s.perform(s.a.extensionContext(context.Background(), res.Extension), res, act)
 	}()
+}
+
+// perform runs an action, first asking for the preferences its extension misses.
+func (s *searcher) perform(ctx sdk.Context, res registry.Result, act sdk.Action) {
+	if act.Run == nil {
+		return
+	}
+	if s.needsPreferences(res.Extension) {
+		s.askPreferences(res, act)
+		return
+	}
+	if err := act.Run(ctx); err != nil {
+		s.a.log.Warn("action failed", "extension", res.Extension, "action", act.Title, "err", err)
+		ctx.Toast(err.Error())
+	}
+}
+
+// needsPreferences reports whether an extension misses required preferences.
+func (s *searcher) needsPreferences(ext string) bool {
+	return s.a.prefs != nil && len(s.a.prefs.missing(ext)) > 0
 }
 
 // viewHost runs the code of the views extensions push, as ui.Host.

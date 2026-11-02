@@ -104,6 +104,27 @@ func commandItem(c sdk.Command) sdk.Item {
 	}
 }
 
+// Command returns the command with a key, as the last refresh found it.
+func (r *Registry) Command(key string) (Result, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	res, ok := r.items[key]
+	return res, ok && res.Command
+}
+
+// Commands returns the commands the last refresh found, in no order.
+func (r *Registry) Commands() []Result {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var out []Result
+	for _, res := range r.items {
+		if res.Command {
+			out = append(out, res)
+		}
+	}
+	return out
+}
+
 // Query returns the rows for query: answers first, then the items that match, best first.
 func (r *Registry) Query(ctx context.Context, query string) []Result {
 	answers := r.answers(ctx, query)

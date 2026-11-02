@@ -139,6 +139,12 @@ than the file, because most editors save by writing a new file and renaming it o
 When Althea writes settings itself, as the onboarding does, `config.Set` changes the value in
 place, so the user's comments and ordering survive.
 
+Any command can have a hotkey, kept in `[hotkey.commands]` by the command's key,
+`"<extension>/<command>"`, and written by the **Command Hotkeys** command in Althea. Pressing one
+runs the command as it is at that moment with the launcher left hidden; the launcher shows only
+for a view the command pushes, a confirmation it asks or a preference it misses. A combination
+goes to one taker, the launcher's own hotkey first, and the rest are logged.
+
 ## Storage
 
 One SQLite database in WAL mode, through `modernc.org/sqlite`, which needs no C compiler and so

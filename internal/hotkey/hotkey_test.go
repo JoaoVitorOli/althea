@@ -76,6 +76,7 @@ func TestParse(t *testing.T) {
 		{"Alt+Space", hotkey.Binding{Accelerator: "Alt+Space"}, true},
 		{"ctrl + shift + space", hotkey.Binding{Accelerator: "Ctrl+Shift+Space"}, true},
 		{"Super+Space", hotkey.Binding{Accelerator: "Super+Space"}, true},
+		{"shift+ctrl+k", hotkey.Binding{Accelerator: "Ctrl+Shift+K"}, true},
 		{"", hotkey.Binding{}, false},
 		{"Alt+", hotkey.Binding{}, false},
 		{"Ctrl+Shift", hotkey.Binding{}, false}, // modifiers alone
