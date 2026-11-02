@@ -73,15 +73,15 @@ func TestSetAddsAMissingTable(t *testing.T) {
 
 func TestSetCreatesTheDefaultFileFirst(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "settings.toml")
-	if err := config.Set(path, "hotkey.toggle", `Ctrl+"Space"`); err != nil {
+	if err := config.Set(path, "theme.name", `mid"night`); err != nil {
 		t.Fatal(err)
 	}
 	s, _, err := config.Load(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Hotkey.Toggle != `Ctrl+"Space"` {
-		t.Errorf("toggle = %q, want the quotes escaped and read back", s.Hotkey.Toggle)
+	if s.Theme.Name != `mid"night` {
+		t.Errorf("theme = %q, want the quotes escaped and read back", s.Theme.Name)
 	}
 	if !strings.Contains(read(t, path), "# Althea settings") {
 		t.Error("the default file's comments are missing")

@@ -252,8 +252,9 @@ toggle = "Alt+Space"
 		{"", ""},
 		{"Ctrl+Alt+Left", ""}, // its own
 		{"Ctrl+Alt+R", ""},
-		{"K", "Must be a combination, as Ctrl+Shift+V."},
-		{"Win", "Must be a combination, as Ctrl+Shift+V."},
+		{"K", "Must be modifiers and one key, as Ctrl+Shift+V."},
+		{"Win", "Must be modifiers and one key, as Ctrl+Shift+V."},
+		{"Ctrl+Q+P", "Must be modifiers and one key, as Ctrl+Shift+V."},
 		{"alt+space", "Already opens Althea."},
 		{"Alt+Ctrl+C", "Already used by Calculator."},
 	} {

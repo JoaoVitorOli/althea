@@ -6,7 +6,9 @@ package hotkey
 import (
 	"errors"
 	"slices"
+	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 // Virtual-key codes the Win key detection needs.
@@ -75,8 +77,37 @@ type Binding struct {
 
 var modifiers = []string{"Ctrl", "Alt", "Shift", "Super", "Cmd", "CmdOrCtrl", "Meta"}
 
-// Parse reads a hotkey as settings write it: "Win", or modifiers and a key joined by "+", such
-// as "Alt+Space". A key needs at least one modifier, so the hotkey cannot swallow typing.
+// modifierNames are the other names MyGo knows modifiers by.
+var modifierNames = map[string]string{
+	"control": "Ctrl", "option": "Alt", "altgr": "Alt", "command": "Cmd", "commandorcontrol": "CmdOrCtrl", "win": "Super",
+}
+
+// namedKeys are the keys with names longer than a letter that MyGo can register, in lower case,
+// besides F1 to F24 and Num0 to Num9.
+var namedKeys = []string{
+	"plus", "space", "tab", "capslock", "numlock", "scrolllock", "backspace", "delete", "del", "insert", "ins",
+	"return", "enter", "up", "down", "left", "right", "home", "end", "pageup", "pagedown", "escape", "esc",
+	"volumeup", "volumedown", "volumemute", "medianexttrack", "mediaprevioustrack", "mediastop", "mediaplaypause",
+	"printscreen", "numdec", "numadd", "numsub", "nummult", "numdiv",
+}
+
+// validKey reports whether a part that is no modifier names a key.
+func validKey(key string) bool {
+	lower := strings.ToLower(key)
+	if utf8.RuneCountInString(key) == 1 || slices.Contains(namedKeys, lower) {
+		return true
+	}
+	if n, ok := strings.CutPrefix(lower, "f"); ok {
+		v, err := strconv.Atoi(n)
+		return err == nil && v >= 1 && v <= 24 && strconv.Itoa(v) == n
+	}
+	n, ok := strings.CutPrefix(lower, "num")
+	return ok && len(n) == 1 && n[0] >= '0' && n[0] <= '9'
+}
+
+// Parse reads a hotkey as settings write it: "Win", or modifiers and one key joined by "+", such
+// as "Alt+Space". A key needs at least one modifier, so the hotkey cannot swallow typing, and
+// there is only one, as the system registers no more: "Ctrl+Q+P" is refused.
 func Parse(s string) (Binding, error) {
 	s = strings.TrimSpace(s)
 	if strings.EqualFold(s, "win") {
@@ -88,17 +119,24 @@ func Parse(s string) (Binding, error) {
 		if parts[i] == "" {
 			return Binding{}, errors.New(`hotkey: want "Win" or a combination such as "Alt+Space"`)
 		}
-		if j := slices.IndexFunc(modifiers, func(m string) bool { return strings.EqualFold(m, parts[i]) }); j >= 0 {
+		if name, ok := modifierNames[strings.ToLower(parts[i])]; ok {
+			parts[i] = name
+		} else if j := slices.IndexFunc(modifiers, func(m string) bool { return strings.EqualFold(m, parts[i]) }); j >= 0 {
 			parts[i] = modifiers[j]
-		} else if len(parts[i]) > 1 {
+		} else if utf8.RuneCountInString(parts[i]) > 1 {
 			parts[i] = strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
 		} else {
 			parts[i] = strings.ToUpper(parts[i])
 		}
 	}
 	key := parts[len(parts)-1]
-	if len(parts) < 2 || slices.Contains(modifiers, key) {
+	if len(parts) < 2 || slices.Contains(modifiers, key) || !validKey(key) {
 		return Binding{}, errors.New("hotkey: a combination needs one or more modifiers and a key, such as Alt+Space")
+	}
+	for _, p := range parts[:len(parts)-1] {
+		if !slices.Contains(modifiers, p) {
+			return Binding{}, errors.New("hotkey: a combination has only one key besides its modifiers, such as Ctrl+Alt+P")
+		}
 	}
 	// One spelling for each combination, so that two can be compared.
 	slices.SortStableFunc(parts[:len(parts)-1], func(a, b string) int {

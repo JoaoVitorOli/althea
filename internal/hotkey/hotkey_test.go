@@ -77,6 +77,14 @@ func TestParse(t *testing.T) {
 		{"ctrl + shift + space", hotkey.Binding{Accelerator: "Ctrl+Shift+Space"}, true},
 		{"Super+Space", hotkey.Binding{Accelerator: "Super+Space"}, true},
 		{"shift+ctrl+k", hotkey.Binding{Accelerator: "Ctrl+Shift+K"}, true},
+		{"Control+K", hotkey.Binding{Accelerator: "Ctrl+K"}, true},
+		{"ctrl+alt+pageup", hotkey.Binding{Accelerator: "Ctrl+Alt+Pageup"}, true},
+		{"Ctrl+F12", hotkey.Binding{Accelerator: "Ctrl+F12"}, true},
+		{"Ctrl+Num5", hotkey.Binding{Accelerator: "Ctrl+Num5"}, true},
+		{"Ctrl+Q+P", hotkey.Binding{}, false}, // two keys: the system registers one
+		{"Q+W+E+O+P", hotkey.Binding{}, false},
+		{"Ctrl+Banana", hotkey.Binding{}, false},
+		{"Ctrl+F25", hotkey.Binding{}, false},
 		{"", hotkey.Binding{}, false},
 		{"Alt+", hotkey.Binding{}, false},
 		{"Ctrl+Shift", hotkey.Binding{}, false}, // modifiers alone
