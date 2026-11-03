@@ -61,8 +61,9 @@ jobs:
       - name: Prove it translates
         run: |
           mkdir -p smoke/en-pt
+          # jq ends its lines with \r\n on Windows, and the \r would stay on the last field: the hash.
           jq -r '.[] | select(.from == "en" and .to == "pt") | .files[] | "\(.role) \(.url) \(.sha256)"' \
-            extensions/translator/models.json > files.txt
+            extensions/translator/models.json | tr -d '\r' > files.txt
           while read -r role url sum; do
             case "$role" in model) name=model.bin ;; lex) name=lex.bin ;; vocab) name=vocab.spm ;; esac
             curl -fsSL -o "smoke/en-pt/$name" "$url"
