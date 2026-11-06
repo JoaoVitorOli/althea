@@ -47,6 +47,10 @@ Floating Notes is `extensions/notes` (the notes, sealed with a key in the vault)
 which the host owns: `internal/shell` makes it, `internal/ui` draws it and `internal/app` keeps
 what is typed, written once typing pauses.
 
+The theme editor is a window of the host as well (`internal/ui/themeeditor.go`): it edits a theme's
+tokens beside a launcher drawn with them, and `theme.Write` saves the file with `extends` and only
+what differs, never letting a theme extend itself; the themes watcher then applies it.
+
 ## Dependency rules
 
 | Package | May import |

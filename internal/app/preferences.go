@@ -192,6 +192,8 @@ type settingsExtension struct {
 	commands func() []registry.Result
 	// titles names the extensions, by ID.
 	titles map[string]string
+	// editThemes opens the theme editor; nil offers none.
+	editThemes func()
 }
 
 func (s *settingsExtension) Manifest() sdk.Manifest {
@@ -216,6 +218,17 @@ func (s *settingsExtension) Commands(ctx sdk.Context) []sdk.Command {
 			Icon: sdk.Icon{Glyph: "command"}, Keywords: strings.Fields(ctx.T("hotkeys.keywords")),
 			Run: func(ctx sdk.Context) error {
 				ctx.Push(s.hotkeyList(ctx))
+				return nil
+			},
+		})
+	}
+	if s.editThemes != nil {
+		cmds = append(cmds, sdk.Command{
+			ID: "theme-editor", Title: ctx.T("themes.title"), Subtitle: ctx.T("themes.subtitle"),
+			Icon: sdk.Icon{Glyph: "color"}, Keywords: strings.Fields(ctx.T("themes.keywords")),
+			Run: func(ctx sdk.Context) error {
+				ctx.Hide()
+				s.editThemes()
 				return nil
 			},
 		})

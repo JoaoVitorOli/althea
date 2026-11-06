@@ -30,3 +30,8 @@ info = "Ctrl, Alt ou Shift e uma tecla. Funciona em qualquer lugar, com o Althea
 taken = "Já usado por {command}."
 taken_launcher = "Já abre o Althea."
 not_saved = "Não salvo"
+
+[themes]
+title = "Editor de Temas"
+subtitle = "Crie um tema seu, vendo o resultado enquanto edita"
+keywords = "theme editor colors appearance customize tema editor cores aparência personalizar"

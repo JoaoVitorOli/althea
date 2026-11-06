@@ -82,3 +82,72 @@ none = "No note holds that"
 delete = "Delete note (Ctrl+Shift+D)"
 delete_confirm = "Click again to delete this note"
 close = "Close (Esc)"
+
+[theme_editor]
+title = "Theme Editor"
+name = "Name"
+based_on = "Based on"
+appearance = "Appearance"
+copy_of = "{name} Custom"
+material_kind = "Kind"
+system_font = "System font"
+reset = "Reset"
+save = "Save and Use"
+needs_name = "Give the theme a name"
+builtin_name = "A built-in theme has that name: choose another"
+saved = "Saved as {file} and in use"
+
+[theme_editor.section]
+colors = "Colors"
+material = "Material"
+shape = "Shape"
+space = "Space"
+font = "Type"
+motion = "Motion"
+
+[theme_editor.color]
+background = "Background"
+surface = "Surface"
+surface_hover = "Surface, hovered"
+surface_pressed = "Surface, pressed"
+border = "Border"
+row_selected = "Chosen row"
+text = "Text"
+text_muted = "Secondary text"
+accent = "Accent"
+accent_hover = "Accent, hovered"
+accent_pressed = "Accent, pressed"
+accent_text = "Text on accent"
+selection = "Selected text"
+focus = "Focus ring"
+danger = "Danger"
+warning = "Warning"
+success = "Success"
+
+[theme_editor.material]
+opacity = "Background opacity"
+
+[theme_editor.shape]
+window_radius = "Window corners"
+row_radius = "Row corners"
+control_radius = "Control corners"
+
+[theme_editor.space]
+padding = "Padding"
+gap = "Gap"
+row_height = "Row height"
+
+[theme_editor.font]
+family = "Font"
+size = "Size"
+
+[theme_editor.motion]
+scale = "Speed of motion (0 is off)"
+
+[theme_editor.sample]
+answer = "Answer"
+command = "Command"
+notes = "Floating Notes"
+files = "Search Files"
+settings = "Settings"
+open = "Open"

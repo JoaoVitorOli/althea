@@ -107,6 +107,8 @@ type althea struct {
 	unbind   func()
 	// notes is the floating notes' window.
 	notes *floatingNotes
+	// themes is the theme editor.
+	themes themeEditor
 }
 
 func (a *althea) ready() {
@@ -185,6 +187,7 @@ func (a *althea) reloadTheme() {
 	if a.notes != nil {
 		a.notes.setTheme()
 	}
+	a.themes.setChrome(t)
 }
 
 // watchThemes reloads the theme when a file in the themes folder changes.

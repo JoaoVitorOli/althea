@@ -82,6 +82,7 @@ func (a *althea) setUpSearch() error {
 	}
 	exts = append(exts, settings)
 	settings.titles = titles(exts)
+	settings.editThemes = func() { mygo.RunOnMain(a.openThemeEditor) }
 	a.background = newServices(a, exts)
 	a.prefs.changed = a.background.restart
 

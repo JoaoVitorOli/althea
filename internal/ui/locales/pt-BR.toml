@@ -82,3 +82,72 @@ none = "Nenhuma nota tem isso"
 delete = "Apagar nota (Ctrl+Shift+D)"
 delete_confirm = "Clique de novo para apagar esta nota"
 close = "Fechar (Esc)"
+
+[theme_editor]
+title = "Editor de Temas"
+name = "Nome"
+based_on = "Baseado em"
+appearance = "Aparência"
+copy_of = "{name} Personalizado"
+material_kind = "Tipo"
+system_font = "Fonte do sistema"
+reset = "Desfazer"
+save = "Salvar e Usar"
+needs_name = "Dê um nome ao tema"
+builtin_name = "Um tema embutido tem esse nome: escolha outro"
+saved = "Salvo como {file} e em uso"
+
+[theme_editor.section]
+colors = "Cores"
+material = "Material"
+shape = "Forma"
+space = "Espaço"
+font = "Tipografia"
+motion = "Movimento"
+
+[theme_editor.color]
+background = "Fundo"
+surface = "Superfície"
+surface_hover = "Superfície, com o mouse"
+surface_pressed = "Superfície, pressionada"
+border = "Borda"
+row_selected = "Linha escolhida"
+text = "Texto"
+text_muted = "Texto secundário"
+accent = "Destaque"
+accent_hover = "Destaque, com o mouse"
+accent_pressed = "Destaque, pressionado"
+accent_text = "Texto sobre o destaque"
+selection = "Texto selecionado"
+focus = "Anel de foco"
+danger = "Perigo"
+warning = "Aviso"
+success = "Sucesso"
+
+[theme_editor.material]
+opacity = "Opacidade do fundo"
+
+[theme_editor.shape]
+window_radius = "Cantos da janela"
+row_radius = "Cantos das linhas"
+control_radius = "Cantos dos controles"
+
+[theme_editor.space]
+padding = "Margem interna"
+gap = "Espaçamento"
+row_height = "Altura das linhas"
+
+[theme_editor.font]
+family = "Fonte"
+size = "Tamanho"
+
+[theme_editor.motion]
+scale = "Velocidade do movimento (0 desliga)"
+
+[theme_editor.sample]
+answer = "Resposta"
+command = "Comando"
+notes = "Notas Flutuantes"
+files = "Buscar Arquivos"
+settings = "Configurações"
+open = "Abrir"
