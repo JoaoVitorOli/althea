@@ -64,6 +64,7 @@ func (a *althea) setUpSearch() error {
 			Reveal: func(path string) error { mygo.Shell.ShowItemInFolder(path); return nil },
 		},
 		Windows:     a.windowsPlatform(),
+		Notes:       a.notesPlatform(),
 		AI:          ai.Platform{CommandsDir: a.paths.Commands},
 		Translator:  translator.Platform{Dir: filepath.Join(a.paths.Data, "translator"), Command: a.services.Command},
 		AsExtension: func(ctx sdk.Context, ext string) sdk.Context { return a.extensionContext(ctx, ext) },
@@ -74,6 +75,7 @@ func (a *althea) setUpSearch() error {
 		}
 	}
 	exts = a.migrate(exts)
+	a.setUpNotes(exts)
 	settings := a.setUpPreferences(exts)
 	if err := a.addMessages(settings.Manifest()); err != nil {
 		return err

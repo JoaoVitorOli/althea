@@ -68,3 +68,17 @@ updates_hint = "Only asks GitHub for new versions. Nothing else is ever sent."
 [onboarding.done]
 title = "You're all set"
 body = "Press {hotkey} anywhere to open Althea."
+
+[notes]
+title = "Floating Notes"
+untitled = "Untitled note"
+placeholder = "Write in Markdown…"
+new = "New note (Ctrl+N)"
+preview = "Preview (Ctrl+E)"
+edit = "Edit (Ctrl+E)"
+notes = "Find a note (Ctrl+P)"
+find = "Find a note…"
+none = "No note holds that"
+delete = "Delete note (Ctrl+Shift+D)"
+delete_confirm = "Click again to delete this note"
+close = "Close (Esc)"

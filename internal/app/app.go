@@ -105,6 +105,8 @@ type althea struct {
 	commands commandHotkeys
 	hotkey   string
 	unbind   func()
+	// notes is the floating notes' window.
+	notes *floatingNotes
 }
 
 func (a *althea) ready() {
@@ -180,6 +182,9 @@ func (a *althea) reloadTheme() {
 	a.root.SetTheme(t)
 	a.launcher.SetMaterial(t.Material.Kind)
 	a.applyChrome()
+	if a.notes != nil {
+		a.notes.setTheme()
+	}
 }
 
 // watchThemes reloads the theme when a file in the themes folder changes.

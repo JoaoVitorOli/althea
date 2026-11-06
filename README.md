@@ -1,8 +1,8 @@
 # Althea
 
 One hotkey, one search bar, and the rest of your computer is a few keystrokes away: apps,
-system commands, math, and soon clipboard history, snippets, window layouts, AI and offline
-translation.
+system commands, math and currencies, clipboard history, snippets, window layouts, AI, floating
+notes, and soon offline translation.
 
 Launchers like this usually keep their best features behind a subscription and send your usage
 somewhere. Althea ships every feature free, keeps everything on your machine, and treats every

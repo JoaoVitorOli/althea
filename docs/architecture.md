@@ -43,8 +43,9 @@ it (see [Dependency rules](#dependency-rules)), so the boundary cannot drift qui
 | `sdk`, `sdk/sdktest` | The public extension API, and a recording `Context` for testing extensions |
 | `extensions/*` | Every feature, Script Commands included. [How to add one](extensions.md) |
 
-Planned packages, from the spec: encryption at rest for notes (its key in the vault that
-`platform.Vault` already reaches).
+Floating Notes is `extensions/notes` (the notes, sealed with a key in the vault) and its window,
+which the host owns: `internal/shell` makes it, `internal/ui` draws it and `internal/app` keeps
+what is typed, written once typing pauses.
 
 ## Dependency rules
 

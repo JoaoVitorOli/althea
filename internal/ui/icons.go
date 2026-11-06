@@ -70,6 +70,11 @@ var glyphs = map[string]*ui.SVG{
 	"folder":              svg(`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>`),
 	"link":                svg(`<path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/>`),
 	"logout":              svg(`<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/>`),
+	"note":                svg(`<path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v9l-6 7H7a2 2 0 0 1-2-2z"/><path d="M19 14h-4a2 2 0 0 0-2 2v5M9 8h6M9 11.5h4"/>`),
+	"close":               svg(`<path d="M6 6l12 12M18 6 6 18"/>`),
+	"plus":                svg(`<path d="M12 5v14M5 12h14"/>`),
+	"eye":                 svg(`<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>`),
+	"pencil":              svg(`<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>`),
 	"sun":                 svg(`<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>`),
 }
 

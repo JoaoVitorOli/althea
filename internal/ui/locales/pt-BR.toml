@@ -68,3 +68,17 @@ updates_hint = "Só pergunta ao GitHub se há versões novas. Nada mais é envia
 [onboarding.done]
 title = "Tudo pronto"
 body = "Pressione {hotkey} em qualquer lugar para abrir o Althea."
+
+[notes]
+title = "Notas Flutuantes"
+untitled = "Nota sem título"
+placeholder = "Escreva em Markdown…"
+new = "Nova nota (Ctrl+N)"
+preview = "Visualizar (Ctrl+E)"
+edit = "Editar (Ctrl+E)"
+notes = "Encontrar uma nota (Ctrl+P)"
+find = "Encontre uma nota…"
+none = "Nenhuma nota tem isso"
+delete = "Apagar nota (Ctrl+Shift+D)"
+delete_confirm = "Clique de novo para apagar esta nota"
+close = "Fechar (Esc)"

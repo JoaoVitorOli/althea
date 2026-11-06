@@ -9,6 +9,7 @@ import (
 	"github.com/JoaoVitorOli/althea/extensions/clipboard"
 	"github.com/JoaoVitorOli/althea/extensions/emoji"
 	"github.com/JoaoVitorOli/althea/extensions/files"
+	"github.com/JoaoVitorOli/althea/extensions/notes"
 	"github.com/JoaoVitorOli/althea/extensions/quicklinks"
 	"github.com/JoaoVitorOli/althea/extensions/scripts"
 	"github.com/JoaoVitorOli/althea/extensions/snippets"
@@ -30,6 +31,7 @@ type Platforms struct {
 	Windows    windows.Platform
 	AI         ai.Platform
 	Translator translator.Platform
+	Notes      notes.Platform
 	// AsExtension gives a Context of something being done the identity of another extension, for
 	// one built-in to reach another's preferences, as the Translator does the AI provider's.
 	AsExtension func(ctx sdk.Context, ext string) sdk.Context
@@ -57,5 +59,6 @@ func Builtin(p Platforms) []sdk.Extension {
 		files.New(p.Files),
 		emoji.New(),
 		windows.New(p.Windows),
+		notes.New(p.Notes),
 	}
 }
