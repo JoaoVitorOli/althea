@@ -72,11 +72,11 @@ jobs:
             -DVCPKG_TARGET_TRIPLET=x64-windows-static `
             -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
             -DUSE_MKL=OFF -DUSE_FBGEMM=OFF `
-            -DCBLAS_openblas_INCLUDE=C:/vcpkg/installed/x64-windows-static/include/openblas `
+            -Dcblas_openblas_INCLUDE=C:/vcpkg/installed/x64-windows-static/include/openblas `
             | Tee-Object configure.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           # Without BLAS marian still builds, and only fails once it translates.
-          if (-not (Select-String -Quiet -SimpleMatch -- '-- libraries found' configure.log)) {
+          if (-not (Select-String -Quiet -SimpleMatch 'CBLAS library found' configure.log)) {
             Write-Error 'marian was configured without CBLAS'
             exit 1
           }
