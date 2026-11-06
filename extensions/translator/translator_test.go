@@ -59,6 +59,7 @@ func runFakeEngine() {
 		case "hang":
 			time.Sleep(time.Hour)
 		case "die":
+			fmt.Fprintln(os.Stderr, "[2026-11-06 20:00:00] Error: Model file is corrupt")
 			os.Exit(3)
 		}
 		fmt.Fprintf(out, "%s %d\n%s", status, len(answer), answer)

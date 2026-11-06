@@ -12,6 +12,7 @@
 // The answer is "ok <size>\n" and the translation, or "error <size>\n" and what went wrong. It exits
 // when stdin closes.
 #include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <future>
 #include <iostream>
@@ -54,9 +55,27 @@ bool isPair(const std::string &pair) {
   return true;
 }
 
+// onTerminate says why the engine is about to stop, as when a translation thread throws, before
+// the abort that ends it: Windows reports only 0xC0000409 then.
+void onTerminate() {
+  if (auto e = std::current_exception()) {
+    try {
+      std::rethrow_exception(e);
+    } catch (const std::exception &x) {
+      std::cerr << "althea-bergamot: uncaught exception: " << x.what() << std::endl;
+    } catch (...) {
+      std::cerr << "althea-bergamot: uncaught exception of an unknown type" << std::endl;
+    }
+  } else {
+    std::cerr << "althea-bergamot: terminated without an exception" << std::endl;
+  }
+  std::abort();
+}
+
 }  // namespace
 
 int main() {
+  std::set_terminate(onTerminate);
 #ifdef _WIN32
   // The sizes count bytes: nothing may turn \n into \r\n on the way.
   _setmode(_fileno(stdin), _O_BINARY);
@@ -67,6 +86,9 @@ int main() {
   AsyncService::Config config;
   config.numWorkers = 1;
   config.cacheSize = 0;
+  // Marian's checks log why they abort; bergamot turns its loggers off unless told. Errors go to
+  // stderr, which Althea keeps the end of.
+  config.logger.level = "error";
   AsyncService service(config);
   std::map<std::string, std::shared_ptr<TranslationModel>> models;
 

@@ -33,6 +33,8 @@ type engine struct {
 	stdout *bufio.Reader
 	idle   *time.Timer
 	closed bool
+	// stderr keeps the end of what the engine says on stderr: why it stopped, when it did.
+	stderr *tail
 }
 
 // translate translates text with the model of pair. Canceling ctx stops the engine, the only way
@@ -62,7 +64,11 @@ func (g *engine) translate(ctx context.Context, pair, text string) (string, erro
 	select {
 	case r := <-done:
 		if errors.Is(r.err, errEngineStopped) {
-			g.halt()
+			said := g.stderr
+			g.halt() // waits for the process, and so for all it said
+			if why := said.last(); why != "" {
+				return "", fmt.Errorf("%w: %s", errEngineStopped, why)
+			}
 			return "", r.err
 		}
 		g.idle = time.AfterFunc(idleAfter, g.stop)
@@ -119,6 +125,8 @@ func (g *engine) start() error {
 	if err != nil {
 		return err
 	}
+	g.stderr = &tail{}
+	cmd.Stderr = g.stderr
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("start the translation engine: %w", err)
 	}
@@ -161,4 +169,34 @@ func (g *engine) halt() {
 	_ = g.cmd.Process.Kill()
 	_ = g.cmd.Wait()
 	g.cmd, g.stdin, g.stdout = nil, nil, nil
+}
+
+// tailSize is how much of the engine's stderr is kept.
+const tailSize = 4 << 10
+
+// tail keeps the last tailSize bytes written to it.
+type tail struct {
+	mu  sync.Mutex
+	buf []byte
+}
+
+func (t *tail) Write(p []byte) (int, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.buf = append(t.buf, p...)
+	if over := len(t.buf) - tailSize; over > 0 {
+		t.buf = append(t.buf[:0], t.buf[over:]...)
+	}
+	return len(p), nil
+}
+
+// last returns the last line with text, "" for none.
+func (t *tail) last() string {
+	if t == nil {
+		return ""
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	lines := strings.Split(strings.TrimSpace(string(t.buf)), "\n")
+	return strings.TrimSpace(lines[len(lines)-1])
 }
