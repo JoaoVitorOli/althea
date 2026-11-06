@@ -1,3 +1,7 @@
 {
- "windows/amd64": {}
+ "windows/amd64": {
+  "url": "https://github.com/JoaoVitorOli/althea/releases/download/bergamot-9271618ebbdc/bergamot.exe",
+  "size": 11151360,
+  "sha256": "c6739098452b0c031cd2d5dd4995ff1b970bfe4bb89a7367c0ffc7af9eb29539"
+ }
 }

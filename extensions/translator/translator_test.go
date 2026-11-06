@@ -257,7 +257,7 @@ func TestPinnedFilesHaveHashesAndSizes(t *testing.T) {
 	if err := readJSON("engine.json", &engines); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := engines["windows/amd64"]; !ok {
+	if f, ok := engines["windows/amd64"]; !ok || len(f.SHA256) != 64 || f.Size <= 0 || !strings.HasPrefix(f.URL, "https://") {
 		t.Errorf("engines %v", engines)
 	}
 }
