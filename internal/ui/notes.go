@@ -87,14 +87,17 @@ func (w *NotesWindow) Show(id string) {
 // Shown is the note that shows, "" before one does.
 func (w *NotesWindow) Shown() string { return w.note.ID }
 
-// Changed tells the window that a note changed elsewhere, as from the launcher; a deleted note
-// gives way to the next.
+// Changed tells the window that notes changed elsewhere, as from the launcher or another
+// computer: the note shown takes its new text, and a deleted note gives way to the next.
 func (w *NotesWindow) Changed() {
 	if w.note.ID == "" {
 		return
 	}
 	for _, n := range w.Backend.List() {
 		if n.ID == w.note.ID {
+			if n.Text != w.text {
+				w.note, w.text = n, n.Text
+			}
 			return
 		}
 	}

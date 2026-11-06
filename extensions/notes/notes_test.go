@@ -193,3 +193,38 @@ func TestNoVaultNoNotes(t *testing.T) {
 		t.Errorf("Items = %v, %v", items, err)
 	}
 }
+
+func TestRecordsGoToAnotherComputer(t *testing.T) {
+	e, ctx, _, _ := newExt(t)
+	n, _ := e.Create(ctx, "# Trip\npack the tent")
+	records, err := e.Records(ctx)
+	if err != nil || len(records) != 1 {
+		t.Fatalf("Records = %v, %v", records, err)
+	}
+
+	other, octx, _, _ := newExt(t)
+	if err := other.PutRecord(octx, n.ID, records[n.ID]); err != nil {
+		t.Fatal(err)
+	}
+	got, ok, err := other.Get(octx, n.ID)
+	if err != nil || !ok || got.Text != "# Trip\npack the tent" || !got.Created.Equal(n.Created.Truncate(time.Millisecond)) {
+		t.Fatalf("Get = %+v, %v, %v", got, ok, err)
+	}
+
+	// A delete there, then the note again: it comes back.
+	if err := other.PutRecord(octx, n.ID, nil); err != nil {
+		t.Fatal(err)
+	}
+	if all, _ := other.Notes(octx); len(all) != 0 {
+		t.Errorf("after the delete: %v", all)
+	}
+	if err := other.PutRecord(octx, n.ID, nil); err != nil {
+		t.Errorf("deleting twice: %v", err)
+	}
+	if err := other.PutRecord(octx, n.ID, records[n.ID]); err != nil {
+		t.Fatal(err)
+	}
+	if all, _ := other.Notes(octx); len(all) != 1 {
+		t.Errorf("after coming back: %v", all)
+	}
+}

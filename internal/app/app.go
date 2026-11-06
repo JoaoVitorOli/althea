@@ -109,6 +109,8 @@ type althea struct {
 	notes *floatingNotes
 	// themes is the theme editor.
 	themes themeEditor
+	// syncing keeps the computers in step through the sync folder.
+	syncing *folderSync
 }
 
 func (a *althea) ready() {

@@ -38,6 +38,7 @@ it (see [Dependency rules](#dependency-rules)), so the boundary cannot drift qui
 | `internal/prefs` | Extensions' preferences: the values in `settings.toml` checked against what each declares |
 | `internal/store` | One SQLite database: per-extension key-value, migrations, a query counter for tests |
 | `internal/i18n`, `paths`, `logging`, `fswatch`, `tomlpos`, `hotkey` | Small single-purpose pieces the above share |
+| `internal/foldersync` | Sync through a folder: the passphrase key, each computer's sealed file, the merge |
 | `internal/netpolicy` | The only way to the network: each request allowed only for something the user did, and logged |
 | `internal/platform` | Interfaces for OS services and their [adapters](../internal/platform/README.md) |
 | `sdk`, `sdk/sdktest` | The public extension API, and a recording `Context` for testing extensions |
@@ -50,6 +51,17 @@ what is typed, written once typing pauses.
 The theme editor is a window of the host as well (`internal/ui/themeeditor.go`): it edits a theme's
 tokens beside a launcher drawn with them, and `theme.Write` saves the file with `extends` and only
 what differs, never letting a theme extend itself; the themes watcher then applies it.
+
+Sync is `internal/foldersync`, run by `internal/app/sync.go`. Each computer writes only its own
+file in the sync folder's `devices` directory: every record it has (settings.toml, each theme and
+AI Command file, each snippet and quicklink, each note), with a clock and the computer that wrote
+it, gzipped and sealed with AES-256-GCM under a key derived from the passphrase with Argon2id.
+The folder's `althea-sync.json` holds the salt, the parameters and a sealed check that tells a
+wrong passphrase. A sync reads every computer's file and keeps, per record, the highest clock
+(the time of the write, or one past the highest clock seen), then the highest device ID; deletes
+travel as tombstones. As no two computers write the same file, the sync tool never has a conflict.
+A computer that joins yields what it had to what the folder holds. The key is kept in the vault,
+never the passphrase; syncing runs every minute and whenever another computer's file changes.
 
 ## Dependency rules
 

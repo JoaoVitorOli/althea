@@ -120,7 +120,7 @@ type Icon struct {
 	Text string
 	// Glyph is one of the host's built-in icons, by name: "search", "command", "calculator",
 	// "power", "lock", "moon", "restart", "trash", "settings", "app", "logout", "sun",
-	// "script", "document", "link", "clipboard", "image", "color", "folder", "sparkles", "translate", "swap", "copy", "check", "note", "plus", "eye", "pencil", and "window.left",
+	// "script", "document", "link", "clipboard", "image", "color", "folder", "sparkles", "translate", "swap", "copy", "check", "note", "plus", "eye", "pencil", "sync", and "window.left",
 	// "window.right", "window.top", "window.bottom", "window.third_first", "window.third_center",
 	// "window.third_last", "window.top_left", "window.top_right", "window.bottom_left",
 	// "window.bottom_right", "window.center", "window.maximize", "window.almost", "window.display",

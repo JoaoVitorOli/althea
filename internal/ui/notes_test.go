@@ -164,3 +164,16 @@ func TestNotesWindowFollowsADeleteElsewhere(t *testing.T) {
 		t.Errorf("shown %q, want b", w.Shown())
 	}
 }
+
+func TestNotesWindowTakesTextFromElsewhere(t *testing.T) {
+	f := &fakeNotes{notes: []Note{{ID: "a", Text: "# Old"}}}
+	w, tt := notesWindow(t, f)
+	w.Show("a")
+	tt.Frame()
+	f.notes[0].Text = "# New from the laptop"
+	w.Changed()
+	tt.Frame()
+	if !tt.HasText("New from the laptop") {
+		t.Errorf("texts %q", tt.Texts())
+	}
+}

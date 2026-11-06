@@ -194,6 +194,8 @@ type settingsExtension struct {
 	titles map[string]string
 	// editThemes opens the theme editor; nil offers none.
 	editThemes func()
+	// sync is sync's setup; nil, or a system without a vault, offers none.
+	sync *folderSync
 }
 
 func (s *settingsExtension) Manifest() sdk.Manifest {
@@ -232,6 +234,9 @@ func (s *settingsExtension) Commands(ctx sdk.Context) []sdk.Command {
 				return nil
 			},
 		})
+	}
+	if s.sync != nil && s.sync.a.services.Vault != nil {
+		cmds = append(cmds, s.sync.command(ctx))
 	}
 	return cmds
 }

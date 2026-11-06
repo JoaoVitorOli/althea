@@ -6,6 +6,7 @@ package notes
 import (
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -326,6 +327,59 @@ func (e *Extension) Delete(ctx sdk.Context, id string) error {
 		return sql.ErrNoRows
 	}
 	e.notes = slices.DeleteFunc(e.notes, func(n Note) bool { return n.ID == id })
+	return nil
+}
+
+// record is a note as sync carries it between computers.
+type record struct {
+	Text    string `json:"text"`
+	Created int64  `json:"created"` // Unix milliseconds
+}
+
+// Records returns every note as sync carries it, by ID.
+func (e *Extension) Records(ctx sdk.Context) (map[string][]byte, error) {
+	notes, err := e.Notes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]byte, len(notes))
+	for _, n := range notes {
+		data, err := json.Marshal(record{Text: n.Text, Created: n.Created.UnixMilli()})
+		if err != nil {
+			return nil, err
+		}
+		out[n.ID] = data
+	}
+	return out, nil
+}
+
+// PutRecord writes a note that came from another computer, as Records gave it there, or deletes
+// it for nil data.
+func (e *Extension) PutRecord(ctx sdk.Context, id string, data []byte) error {
+	if data == nil {
+		if err := e.Delete(ctx, id); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		return nil
+	}
+	var r record
+	if err := json.Unmarshal(data, &r); err != nil {
+		return fmt.Errorf("note %s: %w", id, err)
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	s, err := e.seal()
+	if err != nil {
+		return err
+	}
+	now := e.Now().UnixMilli()
+	if _, err := ctx.Database().Exec(ctx,
+		`INSERT INTO notes_items (id, body, created, updated, opened) VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT (id) DO UPDATE SET body = excluded.body, updated = excluded.updated, deleted = 0`,
+		id, s.seal([]byte(r.Text)), r.Created, now, r.Created); err != nil {
+		return err
+	}
+	e.notes = nil // read again, in their order
 	return nil
 }
 
