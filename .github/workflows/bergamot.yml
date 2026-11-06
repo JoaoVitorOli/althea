@@ -38,24 +38,65 @@ jobs:
       - name: Use Althea's program in place of the upstream one
         run: cp tools/bergamot/main.cpp engine/app/bergamot.cpp
 
+      # Building OpenBLAS takes an hour, so what vcpkg builds is kept between runs.
+      - name: Restore what vcpkg built
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: C:\vcpkg-cache
+          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf
+
       - name: Install dependencies
         shell: powershell
         working-directory: C:\vcpkg
+        env:
+          VCPKG_BINARY_SOURCES: clear;files,C:\vcpkg-cache,readwrite
         run: |
+          New-Item -ItemType Directory -Force C:\vcpkg-cache | Out-Null
           $Env:VCPKG_DEFAULT_TRIPLET = 'x64-windows-static'
           .\vcpkg install openblas:x64-windows-static pcre2:x64-windows-static protobuf:x64-windows-static
 
-      # OpenBLAS rather than upstream's MKL, whose license does not sit well with GPL-3.0.
+      - name: Keep what vcpkg built
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: C:\vcpkg-cache
+          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf
+
+      # OpenBLAS rather than upstream's MKL, whose license does not sit well with GPL-3.0. vcpkg puts
+      # cblas.h in include/openblas, where marian's FindCBLAS does not look, so it is named here.
       - name: Configure
         shell: powershell
         run: |
           cmake -S engine -B engine/build -DCMAKE_BUILD_TYPE=Release -DUSE_STATIC_LIBS=ON `
             -DVCPKG_TARGET_TRIPLET=x64-windows-static `
             -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
-            -DUSE_MKL=OFF -DUSE_FBGEMM=OFF
+            -DUSE_MKL=OFF -DUSE_FBGEMM=OFF `
+            -DCBLAS_openblas_INCLUDE=C:/vcpkg/installed/x64-windows-static/include/openblas `
+            | Tee-Object configure.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # Without BLAS marian still builds, and only fails once it translates.
+          if (-not (Select-String -Quiet -SimpleMatch -- '-- libraries found' configure.log)) {
+            Write-Error 'marian was configured without CBLAS'
+            exit 1
+          }
 
       - name: Build
         run: cmake --build engine/build --config Release --target bergamot -j4
+
+      # Uploaded before the smoke test, so a failing engine can still be looked at.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bergamot-windows-x64
+          path: engine/build/app/Release/bergamot.exe
+
+      # Everything it loads must ship with Windows: the app downloads this one file.
+      - name: List the DLLs it needs
+        shell: powershell
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $dumpbin = Get-ChildItem "$vs\VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe" | Select-Object -First 1
+          & $dumpbin.FullName /dependents engine\build\app\Release\bergamot.exe
 
       # Every file is checked against the pins, as the app does.
       - name: Prove it translates
@@ -114,11 +155,6 @@ jobs:
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
         env:
           INPUT_REF: ${{ inputs.ref }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bergamot-windows-x64
-          path: engine/build/app/Release/bergamot.exe
 
       - name: Publish
         if: ${{ inputs.publish }}
