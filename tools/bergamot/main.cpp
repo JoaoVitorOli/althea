@@ -5,20 +5,24 @@
 //
 //   en-pt 5\nhello
 //
-// The pair's model is in <pair>/config.yml under the working directory. Paths are relative on
-// purpose: Marian opens files with the ANSI functions on Windows, which cannot open a path with
-// an accent in it, as C:\Users\João.
+// The pair's model is in <pair>/config.yml under the working directory, and the paths in it are
+// relative to that directory too. They stay relative on purpose: Marian opens files with the ANSI
+// functions on Windows, which cannot open a path with an accent in it, as C:\Users\João. So the
+// config is read here and parsed as text: given its path, bergamot would make every path in it
+// absolute.
 //
 // The answer is "ok <size>\n" and the translation, or "error <size>\n" and what went wrong. It exits
 // when stdin closes.
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
+#include <fstream>
 #include <future>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 #ifdef _WIN32
@@ -33,7 +37,7 @@
 
 // By name, not the whole namespace: its Logger would clash with Marian's, which its macros name.
 using marian::bergamot::AsyncService;
-using marian::bergamot::parseOptionsFromFilePath;
+using marian::bergamot::parseOptionsFromString;
 using marian::bergamot::Response;
 using marian::bergamot::ResponseOptions;
 using marian::bergamot::TranslationModel;
@@ -105,7 +109,11 @@ int main() {
       }
       auto &model = models[pair];
       if (!model) {
-        auto options = parseOptionsFromFilePath(pair + "/config.yml");
+        std::ifstream file(pair + "/config.yml", std::ios::binary);
+        if (!file) throw std::runtime_error("no model for " + pair);
+        std::stringstream yaml;
+        yaml << file.rdbuf();
+        auto options = parseOptionsFromString(yaml.str(), /*validate=*/true, /*pathsInSameDirAs=*/"");
         model = service.createCompatibleModel(options);
       }
       std::promise<Response> promise;
