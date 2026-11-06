@@ -77,8 +77,8 @@ func install(exe string) (string, error) {
 	return dir, os.WriteFile(filepath.Join(dir, "althea.portable"), nil, 0o600)
 }
 
-// launch starts the copy in dir with data of its own, the onboarding done, as if at login, so
-// that the launcher stays hidden as it does when Windows starts it.
+// launch starts the copy in dir with data of its own, the onboarding done and start at login
+// off, as if at login, so that the launcher stays hidden as it does when Windows starts it.
 func launch(dir string) (*instance, error) {
 	bin := filepath.Join(dir, "althea.exe")
 	data := filepath.Join(dir, "data")
@@ -86,6 +86,11 @@ func launch(dir string) (*instance, error) {
 		return nil, err
 	}
 	if err := os.MkdirAll(data, 0o700); err != nil {
+		return nil, err
+	}
+	// Never at login: a copy in a temporary folder must not add itself to Windows' startup,
+	// which the antivirus rightly takes for malware settling in.
+	if err := os.WriteFile(filepath.Join(data, "settings.toml"), []byte("[general]\nstart_at_login = false\n"), 0o600); err != nil {
 		return nil, err
 	}
 	db, err := store.Open(context.Background(), filepath.Join(data, "althea.db"))
