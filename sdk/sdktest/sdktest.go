@@ -45,8 +45,10 @@ type Context struct {
 	Selections   int
 	// Requests are the requests made with HTTP, as "POST https://host/path".
 	Requests []string
-	Pushed   []sdk.View
-	Popped   int
+	// Country is what Region returns.
+	Country string
+	Pushed  []sdk.View
+	Popped  int
 	// Store is what the extension kept in Storage, by key.
 	Store map[string][]byte
 	// Prefs are the values of the extension's preferences: their defaults at first, for the
@@ -60,6 +62,7 @@ type Context struct {
 
 	t          testing.TB
 	migrations fs.FS
+	running    sync.WaitGroup
 	dbOnce     sync.Once
 	db         sdk.Database
 }
@@ -210,6 +213,25 @@ func (c *Context) Toast(message string) {
 
 // T translates with the extension's catalogs.
 func (c *Context) T(key string, args ...any) string { return c.catalog.T(c.prefix+key, args...) }
+
+// Region returns Country.
+func (c *Context) Region() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Country
+}
+
+// Go runs fn on a goroutine with this Context; Wait waits for it.
+func (c *Context) Go(fn func(sdk.Context)) {
+	c.running.Add(1)
+	go func() {
+		defer c.running.Done()
+		fn(c)
+	}()
+}
+
+// Wait waits for what Go runs, as the test's answer after its data arrived.
+func (c *Context) Wait() { c.running.Wait() }
 
 // Language is the language the Context was made with.
 func (c *Context) Language() string { return c.lang }

@@ -219,13 +219,24 @@ func (r *Registry) Take(ctx context.Context, query string) (ext string, act *sdk
 	return "", nil
 }
 
+type answeringKey struct{}
+
+// Answer marks ctx as that of an Answer.
+func Answer(ctx context.Context) context.Context { return context.WithValue(ctx, answeringKey{}, true) }
+
+// Answering reports whether ctx is that of an Answer: the user typed the query it answers.
+func Answering(ctx context.Context) bool {
+	answering, _ := ctx.Value(answeringKey{}).(bool)
+	return answering
+}
+
 // answers asks every Answerer at once and keeps the answers that arrive in time, in the order
 // of the extensions.
 func (r *Registry) answers(ctx context.Context, query string) []Result {
 	if query == "" {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(ctx, r.deps.AnswerTimeout)
+	ctx, cancel := context.WithTimeout(Answer(ctx), r.deps.AnswerTimeout)
 	defer cancel()
 
 	type answer struct {

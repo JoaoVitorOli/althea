@@ -12,3 +12,5 @@ in onboarding. Crash reports stay local.
 
 - Users can audit every request in the log.
 - No usage data to guide decisions; we rely on issues.
+- Typing counts as asking when an answer needs data for what was typed, as the Calculator's
+  exchange rates: an `Answer` may fetch it with `ctx.Go`, never sending the query (2026-11-06).

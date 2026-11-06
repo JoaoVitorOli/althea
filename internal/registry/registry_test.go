@@ -51,6 +51,8 @@ func (hostContext) Hide()                         {}
 func (hostContext) Toast(string)                  {}
 func (hostContext) T(key string, _ ...any) string { return key }
 func (hostContext) Language() string              { return "en" }
+func (hostContext) Region() string                { return "" }
+func (h hostContext) Go(fn func(sdk.Context))     { go fn(h) }
 func (hostContext) Push(sdk.View)                 {}
 func (hostContext) Pop()                          {}
 func (hostContext) Storage() sdk.Storage          { return nil }

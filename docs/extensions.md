@@ -263,6 +263,21 @@ req, err := http.NewRequestWithContext(ctx, http.MethodGet, address, http.NoBody
 res, err := ctx.HTTP().Do(req)
 ```
 
+An answer that needs data, as the Calculator's exchange rates, fetches it with `ctx.Go`: it runs
+off the call, with a `Context` that outlives the answer's 50 ms and may reach the network, since
+the user typed something that needs it. Show what is at hand meanwhile, keep what arrives, and call
+`ctx.Refresh()` to be asked again. Never send what the user typed.
+
+```go
+ctx.Go(func(ctx sdk.Context) {
+	rates, err := fetch(ctx)
+	// keep them, then
+	ctx.Refresh()
+})
+```
+
+`ctx.Region()` is the user's country, as "BR", for defaults such as a currency.
+
 `ctx.SelectedText()` reads the text selected in the app the user was in, "" when there is none. It
 presses Ctrl+C there, hiding the launcher for a moment and leaving the clipboard as it was, so call
 it only when the user asked for something to be done with the selection.

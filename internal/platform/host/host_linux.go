@@ -11,6 +11,6 @@ import (
 // Services returns the Linux services.
 func Services() platform.Services {
 	return platform.Services{
-		Chrome: linux.Chrome{}, Instance: linux.SingleInstance{}, Locale: linux.Locale, Command: exec.CommandContext,
+		Chrome: linux.Chrome{}, Instance: linux.SingleInstance{}, Locale: linux.Locale, Region: linux.Region, Command: exec.CommandContext,
 	}
 }

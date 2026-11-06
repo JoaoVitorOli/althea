@@ -175,6 +175,15 @@ type Context interface {
 	T(key string, args ...any) string
 	// Language is the user's language, as "en" or "pt-BR", for formatting.
 	Language() string
+	// Region is the user's country, as "BR", or "" when the system does not say, for defaults
+	// such as a currency.
+	Region() string
+	// Go runs fn on a goroutine of its own with a Context that outlives this call, for what takes
+	// longer than the call may, as fetching data an answer needs. Requests made with fn's Context
+	// leave when this call's would, and also when this call is an Answer: the user typed something
+	// that needs the data. Never send what the user typed; the host logs every request. A panic
+	// in fn is logged.
+	Go(fn func(ctx Context))
 	// Push shows a view over the current one; Escape comes back.
 	Push(v View)
 	// Pop closes the view on top, back to the one before it or to the root search.
@@ -189,7 +198,8 @@ type Context interface {
 	// logs each request and lets through only those made with a Context of something the user did:
 	// running a command or an action, or opening a view. Pass that Context to the request, as in
 	// http.NewRequestWithContext(ctx, ...). The Context of Commands, Items, Answer, Fallbacks,
-	// Preferences and Serve is refused. The client has no time limit: a request ends with its Context.
+	// Preferences and Serve is refused; an Answer that needs data fetches it with Go. The client
+	// has no time limit: a request ends with its Context.
 	HTTP() *http.Client
 }
 

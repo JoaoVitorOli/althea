@@ -10,7 +10,7 @@ import (
 func Services() platform.Services {
 	return platform.Services{
 		Chrome: windows.Chrome{}, KeyHook: windows.KeyHook{}, System: windows.System{},
-		Instance: windows.SingleInstance{}, Locale: windows.Locale, Vault: windows.Vault{},
+		Instance: windows.SingleInstance{}, Locale: windows.Locale, Region: windows.Region, Vault: windows.Vault{},
 		Command: windows.Command, EditFile: windows.EditFile, Paster: windows.Paster{},
 		Typist: windows.Typist{}, Clipboard: windows.ClipboardWatcher{},
 		KnownFolders: windows.KnownFolders, WatchTree: windows.WatchTree, Windows: windows.WindowManager{},

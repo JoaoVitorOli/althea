@@ -403,6 +403,30 @@ func (h *hostContext) T(key string, args ...any) string {
 
 func (h *hostContext) Language() string { return h.a.catalog.Language() }
 
+func (h *hostContext) Region() string {
+	if h.a.services.Region == nil {
+		return ""
+	}
+	return h.a.services.Region()
+}
+
+// Go keeps the values of h's context, as whether its requests may leave, without its deadline:
+// an Answer's ends a few milliseconds after the user typed.
+func (h *hostContext) Go(fn func(sdk.Context)) {
+	ctx := context.WithoutCancel(h.Context)
+	if registry.Answering(ctx) {
+		ctx = netpolicy.Allow(ctx)
+	}
+	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				h.log.Error("extension panicked", "call", "go", "panic", p)
+			}
+		}()
+		fn(h.a.extensionContext(ctx, h.ext))
+	}()
+}
+
 func (h *hostContext) Push(v sdk.View) {
 	h.a.launcher.Window().Update(func() { h.a.root.Push(h.ext, v) })
 }

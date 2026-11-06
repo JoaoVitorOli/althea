@@ -150,6 +150,8 @@ type Services struct {
 	KeyHook KeyHook
 	// Locale returns the user's display language, such as "pt-BR", or "" when unknown.
 	Locale func() string
+	// Region returns the user's country, as "BR", or "" when unknown.
+	Region func() string
 	// Vault is nil where Althea cannot keep secrets yet, as on Linux before v1.1: secret
 	// preferences cannot be set there.
 	Vault Vault
