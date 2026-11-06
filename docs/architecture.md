@@ -38,6 +38,7 @@ it (see [Dependency rules](#dependency-rules)), so the boundary cannot drift qui
 | `internal/prefs` | Extensions' preferences: the values in `settings.toml` checked against what each declares |
 | `internal/store` | One SQLite database: per-extension key-value, migrations, a query counter for tests |
 | `internal/i18n`, `paths`, `logging`, `fswatch`, `tomlpos`, `hotkey` | Small single-purpose pieces the above share |
+| `internal/soak` | Measures a release build against the budgets, and runs it for hours to find leaks (Windows) |
 | `internal/foldersync` | Sync through a folder: the passphrase key, each computer's sealed file, the merge |
 | `internal/netpolicy` | The only way to the network: each request allowed only for something the user did, and logged |
 | `internal/platform` | Interfaces for OS services and their [adapters](../internal/platform/README.md) |
@@ -61,7 +62,9 @@ wrong passphrase. A sync reads every computer's file and keeps, per record, the 
 (the time of the write, or one past the highest clock seen), then the highest device ID; deletes
 travel as tombstones. As no two computers write the same file, the sync tool never has a conflict.
 A computer that joins yields what it had to what the folder holds. The key is kept in the vault,
-never the passphrase; syncing runs every minute and whenever another computer's file changes.
+never the passphrase. Sync runs a few seconds after something may have changed (the launcher
+hides, a note is written, the settings or a theme reload, another computer's file arrives) and
+never on a timer while nothing happens.
 
 ## Dependency rules
 
