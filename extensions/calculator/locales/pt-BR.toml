@@ -1,4 +1,17 @@
 copy = "Copiar resultado"
+copy_amount = "Copiar com a moeda"
 copy_expression = "Copiar expressão"
 copied = "{answer} copiado"
 kind = "Calculadora"
+rate = "1 {from} = {rate} {to}"
+rates_by = "Cotações da ExchangeRate-API"
+rates_of = "cotações de {date}"
+rates_fetching = "Buscando cotações…"
+rates_failed = "Não foi possível buscar as cotações"
+retry = "Tentar de novo"
+
+[prefs]
+currency = "Moeda"
+currency_info = "Para qual moeda os valores são convertidos quando você não diz outra, como BRL. Vazio usa a da sua região: {region}."
+exchange_rates = "Cotações"
+exchange_rates_info = "Buscar cotações em open.er-api.com, no máximo uma vez por dia, quando um cálculo tem uma moeda."

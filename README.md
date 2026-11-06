@@ -62,9 +62,9 @@ command (see [Script Commands](docs/extensions.md#script-commands)).
 
 ## Privacy
 
-No telemetry. Today Althea makes no network requests at all. The features that will need the
-network, such as update checks, AI and currency rates, are opt-in, and each request they make
-will go to the log.
+No telemetry. Althea reaches the network only for what you ask: AI and online translation with a
+provider you set up, downloads of the offline translator, and currency rates when a calculation has
+a currency (once a day at most, and it can be turned off). Each request goes to the log.
 
 ## License
 

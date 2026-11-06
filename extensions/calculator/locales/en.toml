@@ -1,4 +1,17 @@
 copy = "Copy Answer"
+copy_amount = "Copy with Currency"
 copy_expression = "Copy Expression"
 copied = "Copied {answer}"
 kind = "Calculator"
+rate = "1 {from} = {rate} {to}"
+rates_by = "Rates by ExchangeRate-API"
+rates_of = "rates of {date}"
+rates_fetching = "Fetching exchange rates…"
+rates_failed = "Exchange rates could not be fetched"
+retry = "Try Again"
+
+[prefs]
+currency = "Currency"
+currency_info = "What amounts convert to when you name no other, as BRL. Empty uses your region's: {region}."
+exchange_rates = "Exchange rates"
+exchange_rates_info = "Fetch exchange rates from open.er-api.com, once a day at most, when a calculation has a currency."

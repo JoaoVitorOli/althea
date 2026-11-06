@@ -11,6 +11,7 @@ const (
 	temperature
 	data
 	duration
+	currency // in US dollars, by the rates of the moment
 )
 
 // unit converts to its dimension's base unit: base = value*factor + offset.

@@ -63,7 +63,7 @@ Each one is an extension in `extensions/` (see [architecture.md](architecture.md
 |---|---|
 | **Applications** | Win32 apps (Start menu `.lnk`, registry App Paths) and UWP/Store apps (`shell:AppsFolder`), icons cached; actions: open, run as admin, show in folder, copy path, uninstall settings |
 | **System** | Lock, sleep, restart, shut down, log out, empty recycle bin, toggle dark mode, open Windows settings pages |
-| **Calculator** | Expressions, percentages, units, bases (hex/bin), dates and durations, time zones, currency (rates fetched only when used, cached daily) |
+| **Calculator** | Expressions, percentages, units, bases (hex/bin), dates and durations, time zones, currency (rates from ExchangeRate-API's open access, fetched only when used, cached daily; a lone amount, as "50 dollars", converts to the region's currency or the one set) |
 | **File Search** | Own index of configured folders (default: Desktop, Documents, Downloads, Pictures, Videos, Music), incremental watcher; Everything used as an optional backend for whole disks |
 | **Quicklinks** | URLs or paths with `{query}` and `{clipboard}` placeholders, own icon and alias |
 | **Snippets** | Searchable text snippets with placeholders (`{date}`, `{clipboard}`, `{cursor}`); automatic expansion by keyword is **opt-in** (keyboard hook), paused in password fields |
@@ -132,7 +132,7 @@ The only network traffic Althea makes:
 | Update check | If the user opted in during onboarding or in settings |
 | Model downloads (translator, local AI helpers) | When the user turns the feature on |
 | AI and translation providers | When the user runs a command with a provider configured |
-| Currency rates | When a calculation uses a currency, at most once a day |
+| Currency rates (open.er-api.com) | When a calculation uses a currency, at most once a day; can be turned off |
 | Quicklinks, web search | When the user runs them (opens the browser) |
 
 Crash reports are written locally; the user can copy one into an issue.

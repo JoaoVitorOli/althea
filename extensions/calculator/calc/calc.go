@@ -1,6 +1,7 @@
 // Package calc evaluates what people type into a launcher as math: arithmetic, percentages as
 // they say them ("150 + 10%", "20% of 150"), functions, bases ("255 in hex") and units
-// ("10 km in mi"). It reads decimal commas and writes numbers as the user's language does.
+// ("10 km in mi") and currencies ("50 dollars in euros", by Rates the caller fetched). It reads
+// decimal commas and writes numbers as the user's language does.
 package calc
 
 import (
@@ -15,33 +16,59 @@ import (
 // Result is an evaluated expression.
 type Result struct {
 	Value float64
-	Unit  string // the unit's symbol, if any
+	Unit  string // the unit's symbol, or a currency's code, if any
 	Text  string // the value written for the user's language, with its unit or base
 	Plain string // the value without grouping, for the clipboard
+	// Rate is the exchange rate of a conversion from one currency, nil otherwise.
+	Rate *Rate
 }
 
-// Eval evaluates an expression for a language ("en", "pt-BR").
-func Eval(input, lang string) (Result, error) {
+// Options are how EvalWith reads and writes.
+type Options struct {
+	Lang string // "en" or "pt-BR"
+	// Rates convert currencies; while nil, an expression with one fails with ErrNeedRates.
+	Rates Rates
+	// Currency is what an amount is converted to when the expression names no other, as BRL of
+	// "50 dollars"; an amount already in it goes to US dollars, or to euros from US dollars.
+	Currency string
+}
+
+// Eval evaluates an expression for a language ("en", "pt-BR"), without currencies.
+func Eval(input, lang string) (Result, error) { return EvalWith(input, Options{Lang: lang}) }
+
+// EvalWith evaluates an expression.
+func EvalWith(input string, o Options) (Result, error) {
 	toks, err := lex(input)
 	if err != nil {
 		return Result{}, err
 	}
-	p := &parser{toks: toks}
+	p := &parser{toks: toks, opts: o}
 	v, err := p.expr()
 	if err != nil {
 		return Result{}, err
 	}
-	base, err := p.conversion(&v)
+	base, converted, err := p.conversion(&v)
 	if err != nil {
 		return Result{}, err
 	}
 	if p.pos < len(p.toks) {
 		return Result{}, fmt.Errorf("unexpected %q", p.toks[p.pos].text)
 	}
+	if p.needRates {
+		return Result{}, ErrNeedRates
+	}
+	if p.missing != "" {
+		return Result{}, fmt.Errorf("no rate for %s", p.missing)
+	}
+	if v.unit != nil && v.unit.dim == currency && !converted {
+		p.toDefaultCurrency(&v)
+	}
 	if math.IsNaN(v.n) || math.IsInf(v.n, 0) {
 		return Result{}, errors.New("no number")
 	}
-	return format(v, base, lang), nil
+	r := format(v, base, o.Lang)
+	r.Rate = p.rate(v)
+	return r, nil
 }
 
 // LooksLikeMath reports whether input is math worth answering: an expression that evaluates,
@@ -55,7 +82,7 @@ func LooksLikeMath(input string) bool {
 		return false
 	}
 	_, err = Eval(input, "en")
-	return err == nil
+	return err == nil || errors.Is(err, ErrNeedRates)
 }
 
 // value is a number, with a unit, or a percentage waiting for what it is a percentage of.
@@ -132,8 +159,14 @@ func lex(s string) ([]token, error) {
 			for j < len(rs) && (unicode.IsLetter(rs[j]) || unicode.IsDigit(rs[j]) || rs[j] == '°' || rs[j] == 'µ') {
 				j++
 			}
+			if j < len(rs) && rs[j] == '$' { // R$, US$
+				j++
+			}
 			toks = append(toks, token{kind: ident, text: strings.ToLower(string(rs[i:j]))})
 			i = j
+		case strings.ContainsRune("$€£¥₹₩₽₺₪₦₱₫₴", r):
+			toks = append(toks, token{kind: ident, text: string(r)})
+			i++
 		case r == '*' && i+1 < len(rs) && rs[i+1] == '*':
 			toks = append(toks, token{kind: op, text: "^"})
 			i += 2
@@ -161,6 +194,12 @@ func lex(s string) ([]token, error) {
 type parser struct {
 	toks []token
 	pos  int
+	opts Options
+	// currencies are the codes of the currencies read, needRates whether one was read without
+	// rates, and missing one the rates do not have.
+	currencies []string
+	needRates  bool
+	missing    string
 }
 
 func (p *parser) peek() (token, bool) {
@@ -390,6 +429,8 @@ func (p *parser) primary() (value, error) {
 		v := value{n: t.n}
 		if u, ok := p.unitNext(); ok {
 			v.unit = u
+		} else if u, ok := p.currencyAt(); ok {
+			v.unit = u
 		}
 		return v, nil
 	case t.kind == op && t.text == "(":
@@ -403,6 +444,16 @@ func (p *parser) primary() (value, error) {
 		p.pos++
 		return v, nil
 	case t.kind == ident:
+		// A currency before its amount: "$50", "R$ 10,50".
+		p.pos--
+		if u, ok := p.currencyAt(); ok {
+			if n, ok := p.peek(); ok && n.kind == number && !n.based {
+				p.pos++
+				return value{n: n.n, unit: u}, nil
+			}
+			return value{}, errors.New("a currency needs an amount")
+		}
+		p.pos++
 		if f, ok := functions[t.text]; ok {
 			if !p.isOp("(") {
 				return value{}, fmt.Errorf("%s needs (…)", t.text)
@@ -437,16 +488,25 @@ func (p *parser) unitNext() (*unit, bool) {
 	return u, ok
 }
 
-// conversion reads "in <unit>" or "in hex" at the end, converting v, and returns the base to
-// write the result in (10 by default).
-func (p *parser) conversion(v *value) (int, error) {
+// conversion reads "in <unit>", "in hex" or "to <currency>" at the end, converting v, and
+// returns the base to write the result in (10 by default) and whether it converted.
+func (p *parser) conversion(v *value) (int, bool, error) {
 	if !p.isWord("in", "to", "as", "em", "para") {
-		return 10, nil
+		return 10, false, nil
 	}
 	p.pos++
 	t, ok := p.peek()
 	if !ok || t.kind != ident {
-		return 0, errors.New("convert to what?")
+		return 0, false, errors.New("convert to what?")
+	}
+	if _, isUnit := units[t.text]; !isUnit {
+		if u, ok := p.currencyAt(); ok {
+			if v.unit == nil || v.unit.dim != currency {
+				return 0, false, errors.New("cannot convert between these units")
+			}
+			v.n, v.unit = u.fromBase(v.unit.toBase(v.n)), u
+			return 10, true, nil
+		}
 	}
 	p.pos++
 	if base, ok := map[string]int{
@@ -454,19 +514,19 @@ func (p *parser) conversion(v *value) (int, error) {
 		"oct": 8, "octal": 8, "dec": 10, "decimal": 10,
 	}[t.text]; ok {
 		if v.unit != nil || v.n != math.Trunc(v.n) {
-			return 0, errors.New("bases are for whole numbers")
+			return 0, false, errors.New("bases are for whole numbers")
 		}
-		return base, nil
+		return base, true, nil
 	}
 	u, ok := units[t.text]
 	if !ok {
-		return 0, fmt.Errorf("unknown unit %q", t.text)
+		return 0, false, fmt.Errorf("unknown unit %q", t.text)
 	}
 	if v.unit == nil || v.unit.dim != u.dim {
-		return 0, errors.New("cannot convert between these units")
+		return 0, false, errors.New("cannot convert between these units")
 	}
 	v.n, v.unit = u.fromBase(v.unit.toBase(v.n)), u
-	return 10, nil
+	return 10, true, nil
 }
 
 // clean rounds away the float noise beyond 12 significant digits.
@@ -490,6 +550,9 @@ func format(v value, base int, lang string) Result {
 		r.Text = prefix + strings.ToUpper(strconv.FormatInt(int64(v.n), base))
 		r.Plain = r.Text
 		return r
+	}
+	if v.unit != nil && v.unit.dim == currency {
+		return formatMoney(r, v.n, v.unit.symbol, lang)
 	}
 	n := v.n
 	if n == 0 {
@@ -521,6 +584,44 @@ func format(v value, base int, lang string) Result {
 		text += " " + r.Unit
 	}
 	r.Text = text
+	return r
+}
+
+// formatMoney writes an amount with its currency's cents, more for an amount under one that
+// would round to nothing: "R$ 1.234,50", "$0.0067", "12.50 CHF".
+func formatMoney(r Result, n float64, code, lang string) Result {
+	digits, ok := minorDigits[code]
+	if !ok {
+		digits = 2
+	}
+	if a := math.Abs(n); a > 0 && a < 1 {
+		for digits < 8 && a*math.Pow(10, float64(digits)) < 10 {
+			digits++
+		}
+	}
+	decimal, group := ".", ","
+	if lang == "pt-BR" {
+		decimal, group = ",", "."
+	}
+	plain := strconv.FormatFloat(n, 'f', digits, 64)
+	if strings.Trim(plain, "-0.") == "" {
+		plain = strings.TrimPrefix(plain, "-") // no "-0.00"
+	}
+	intPart, frac, _ := strings.Cut(plain, ".")
+	r.Plain = intPart
+	amount := groupDigits(intPart, group)
+	if frac != "" {
+		r.Plain += decimal + frac
+		amount += decimal + frac
+	}
+	switch sym, ok := symbol(code, lang); {
+	case !ok:
+		r.Text = amount + " " + code
+	case lang == "pt-BR" || len([]rune(sym)) > 1:
+		r.Text = sym + " " + amount // as "R$ 10,50", never broken apart
+	default:
+		r.Text = sym + amount
+	}
 	return r
 }
 
