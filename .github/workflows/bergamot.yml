@@ -44,7 +44,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\vcpkg-cache
-          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf
+          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf-clapack
+          restore-keys: vcpkg-x64-windows-static-
 
       - name: Install dependencies
         shell: powershell
@@ -54,17 +55,19 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force C:\vcpkg-cache | Out-Null
           $Env:VCPKG_DEFAULT_TRIPLET = 'x64-windows-static'
-          .\vcpkg install openblas:x64-windows-static pcre2:x64-windows-static protobuf:x64-windows-static
+          .\vcpkg install openblas:x64-windows-static pcre2:x64-windows-static protobuf:x64-windows-static `
+            clapack:x64-windows-static
 
       - name: Keep what vcpkg built
         if: steps.vcpkg-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: C:\vcpkg-cache
-          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf
+          key: vcpkg-x64-windows-static-openblas-pcre2-protobuf-clapack
 
       # OpenBLAS rather than upstream's MKL, whose license does not sit well with GPL-3.0. vcpkg puts
-      # cblas.h in include/openblas, where marian's FindCBLAS does not look, so it is named here.
+      # cblas.h in include/openblas, where marian's FindCBLAS does not look, so it is named here. Its
+      # OpenBLAS has no LAPACK, which faiss in marian needs; clapack, vcpkg's static one, is linked in.
       - name: Configure
         shell: powershell
         run: |
@@ -73,6 +76,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
             -DUSE_MKL=OFF -DUSE_FBGEMM=OFF `
             -Dcblas_openblas_INCLUDE=C:/vcpkg/installed/x64-windows-static/include/openblas `
+            "-DCMAKE_EXE_LINKER_FLAGS=/machine:x64 C:/vcpkg/installed/x64-windows-static/lib/lapack.lib C:/vcpkg/installed/x64-windows-static/lib/libf2c.lib" `
             | Tee-Object configure.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           # Without BLAS marian still builds, and only fails once it translates.
