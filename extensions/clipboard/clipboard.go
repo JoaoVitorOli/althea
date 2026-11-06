@@ -248,8 +248,19 @@ func (e *Extension) Record(ctx sdk.Context, c Copied) error {
 	return err
 }
 
+// maxPixels is the largest image previewed, 8K by 8K: larger ones are kept, unpreviewed.
+const maxPixels = 8192 * 8192
+
 // thumbnail scales an image down to a preview.
 func thumbnail(data []byte) ([]byte, error) {
+	// The size first: a small file may claim a huge image, which decoding would allocate whole.
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > maxPixels {
+		return nil, fmt.Errorf("an image of %d×%d is too large to preview", cfg.Width, cfg.Height)
+	}
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, err

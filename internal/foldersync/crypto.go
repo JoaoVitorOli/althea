@@ -61,8 +61,9 @@ func Join(dir, passphrase string) ([]byte, error) {
 	if h.Version != 1 || h.KDF != "argon2id" {
 		return nil, fmt.Errorf("%s was written by a newer Althea", headerName)
 	}
-	// A header asking for more than a gigabyte is not one Althea wrote.
-	if h.Params.Time == 0 || h.Params.Time > 20 || h.Params.Memory == 0 || h.Params.Memory > 1<<20 ||
+	// A header asking for much more than Althea's own parameters is not one it wrote: deriving
+	// with them could take minutes and gigabytes.
+	if h.Params.Time == 0 || h.Params.Time > 10 || h.Params.Memory == 0 || h.Params.Memory > 256<<10 ||
 		h.Params.Threads == 0 || len(h.Salt) < 16 {
 		return nil, fmt.Errorf("%s has parameters out of range", headerName)
 	}

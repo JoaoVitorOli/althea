@@ -36,11 +36,19 @@ type Options struct {
 // Eval evaluates an expression for a language ("en", "pt-BR"), without currencies.
 func Eval(input, lang string) (Result, error) { return EvalWith(input, Options{Lang: lang}) }
 
+// maxTokens is the most numbers, words and operators an expression may have.
+const maxTokens = 256
+
 // EvalWith evaluates an expression.
 func EvalWith(input string, o Options) (Result, error) {
 	toks, err := lex(input)
 	if err != nil {
 		return Result{}, err
+	}
+	// The parser recurses for each parenthesis and power: an expression this long is no
+	// calculation, and one nested deeper could exhaust the stack.
+	if len(toks) > maxTokens {
+		return Result{}, errors.New("too long to calculate")
 	}
 	p := &parser{toks: toks, opts: o}
 	v, err := p.expr()

@@ -51,6 +51,13 @@ func (e *Extension) command(path string, args []string) (name string, argv, env 
 			"try { " + call + " } catch { [Console]::Error.WriteLine($_); exit 1 }; exit $LASTEXITCODE"
 		return ps, []string{"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", script}, nil, nil
 	case ".bat", ".cmd":
+		// cmd reads the command line by rules of its own, not those Go quotes it by: an argument
+		// with any of its special characters could run another command.
+		for _, a := range args {
+			if i := strings.IndexAny(a, cmdSpecial); i >= 0 {
+				return "", nil, nil, fmt.Errorf("a batch script cannot be given %q: cmd would read it as a command", a[i:i+1])
+			}
+		}
 		// "call" first, so that cmd keeps the quotes around a path with spaces.
 		return comspec(), append([]string{"/d", "/c", "call", path}, args...), nil, nil
 	case ".py":
@@ -91,8 +98,25 @@ func comspec() string {
 	return "cmd.exe"
 }
 
-// psQuote quotes a string for PowerShell, in single quotes.
-func psQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
+// cmdSpecial are the characters cmd acts on in a command line, and those that end one.
+const cmdSpecial = "\"%!^&|<>\r\n\x00"
+
+// psQuote quotes a string for PowerShell, in single quotes. PowerShell takes the typographic
+// single quotes for one as well, so each of them is doubled as the plain one is: left alone, an
+// argument with one would end the string and run what follows.
+func psQuote(s string) string {
+	var b strings.Builder
+	b.WriteByte('\'')
+	for _, r := range s {
+		switch r {
+		case '\'', '‘', '’', '‚', '‛':
+			b.WriteRune(r)
+		}
+		b.WriteRune(r)
+	}
+	b.WriteByte('\'')
+	return b.String()
+}
 
 // shebang reads the program a script's #! line names, by its base name so that it is found
 // on PATH on Windows too: "#!/usr/bin/env python3" gives python3.

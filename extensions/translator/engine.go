@@ -74,6 +74,10 @@ func (g *engine) translate(ctx context.Context, pair, text string) (string, erro
 	}
 }
 
+// maxAnswer is the longest answer the engine may give: far more than any text it is sent, and
+// little enough that a confused engine cannot make Althea allocate the machine's memory.
+const maxAnswer = 16 << 20
+
 // exchange sends a request and reads its answer. A refusal is the engine's own error; anything else
 // wrong with the pipe means it is gone.
 func exchange(stdin io.Writer, stdout *bufio.Reader, pair, text string) (string, error) {
@@ -86,7 +90,7 @@ func exchange(stdin io.Writer, stdout *bufio.Reader, pair, text string) (string,
 	}
 	status, size, ok := strings.Cut(strings.TrimSpace(header), " ")
 	n, atoiErr := strconv.Atoi(size)
-	if !ok || atoiErr != nil || n < 0 {
+	if !ok || atoiErr != nil || n < 0 || n > maxAnswer {
 		return "", errEngineStopped
 	}
 	body := make([]byte, n)

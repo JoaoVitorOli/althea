@@ -285,3 +285,53 @@ func TestCreateWritesARunnableScript(t *testing.T) {
 	}
 	_ = dir
 }
+
+func TestPowerShellArgumentsStayArguments(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("PowerShell is the Windows shell")
+	}
+	e, dir := newExt(t)
+	src := "# @althea.title Echo\nparam($name)\nWrite-Output \"[$name]\"\n"
+	if err := os.WriteFile(filepath.Join(dir, "echo.ps1"), []byte(src), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s, err := scripts.Parse(filepath.Join(dir, "echo.ps1"), []byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Typographic quotes are quotes to PowerShell: unescaped, they would end the string.
+	for _, arg := range []string{"x’; Write-Output PWNED; ’", "a'b", "‘‚‛"} {
+		out, err := e.Run(t.Context(), s, []string{arg})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.TrimSpace(out.Stdout); got != "["+arg+"]" {
+			t.Errorf("argument %q came out as %q", arg, got)
+		}
+	}
+}
+
+func TestBatchArgumentsCannotRunCommands(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("cmd is the Windows shell")
+	}
+	e, dir := newExt(t)
+	path := script(t, dir, "echo", []string{"title Echo"}, "$ echo [%~1]")
+	src, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := scripts.Parse(path, src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, arg := range []string{"a&echo PWNED", "a|more", "%PATH%", "a\"&echo PWNED&\"", "x\ny"} {
+		if out, err := e.Run(t.Context(), s, []string{arg}); err == nil {
+			t.Errorf("argument %q ran, giving %q", arg, out.Stdout)
+		}
+	}
+	out, err := e.Run(t.Context(), s, []string{"Ada Lovelace"})
+	if err != nil || strings.TrimSpace(out.Stdout) != "[Ada Lovelace]" {
+		t.Errorf("plain argument: %q, %v", out.Stdout, err)
+	}
+}
