@@ -28,9 +28,9 @@ const (
 	syncStateNamespace = "althea.sync.state"
 	// syncKeyName names the folder's key in the vault: the passphrase is never kept.
 	syncKeyName = "Althea/sync/key"
-	// syncEvery is how often changes made here go to the folder; what other computers write
-	// comes as soon as the sync tool brings it.
-	syncEvery = time.Minute
+	// syncAfter is how long after a change sync waits for more: no timer runs while nothing
+	// happens (docs/spec.md, idle CPU).
+	syncAfter = 3 * time.Second
 )
 
 // folderSync runs sync while it is on (docs/adr/0011-sync.md).
@@ -40,17 +40,16 @@ type folderSync struct {
 	mu      sync.Mutex
 	syncer  *foldersync.Syncer // nil while off
 	watcher *fswatch.Watcher
-	stop    chan struct{}
-	last    time.Time // of the last sync, done or failed
+	pending *time.Timer // of a sync asked for soon
+	last    time.Time   // of the last sync, done or failed
 	result  foldersync.Result
 	err     error
 }
 
 func (a *althea) syncKV() *store.KV { return a.db.KV(syncNamespace) }
 
-// setUpSync starts sync if it was turned on before.
+// setUpSync starts sync if it was turned on before. ready made a.syncing.
 func (a *althea) setUpSync() {
-	a.syncing = &folderSync{a: a}
 	if a.services.Vault == nil {
 		return
 	}
@@ -147,28 +146,35 @@ func (f *folderSync) start(dir string, key []byte) error {
 	// What other computers write comes as the sync tool brings it.
 	w, err := fswatch.WatchDir(filepath.Join(dir, "devices"),
 		func(name string) bool { return strings.HasSuffix(name, ".sync") },
-		func() { f.background() })
+		f.soon)
 	if err != nil {
 		return err
 	}
-	stop := make(chan struct{})
 	f.mu.Lock()
-	f.syncer, f.watcher, f.stop = syncer, w, stop
+	f.syncer, f.watcher = syncer, w
 	f.mu.Unlock()
-	go func() {
-		t := time.NewTicker(syncEvery)
-		defer t.Stop()
-		f.background()
-		for {
-			select {
-			case <-stop:
-				return
-			case <-t.C:
-				f.background()
-			}
-		}
-	}()
+	go f.background()
 	return nil
+}
+
+// soon syncs a few seconds from now, after something may have changed: the launcher hid, a note
+// was written, the settings or a theme reloaded, another computer's file came. Changes in a burst
+// make one sync.
+func (f *folderSync) soon() {
+	if f == nil {
+		return
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.syncer == nil || f.pending != nil {
+		return
+	}
+	f.pending = time.AfterFunc(syncAfter, func() {
+		f.mu.Lock()
+		f.pending = nil
+		f.mu.Unlock()
+		f.background()
+	})
 }
 
 func (f *folderSync) halt() {
@@ -177,9 +183,11 @@ func (f *folderSync) halt() {
 	if f.syncer == nil {
 		return
 	}
-	close(f.stop)
+	if f.pending != nil {
+		f.pending.Stop()
+	}
 	_ = f.watcher.Close()
-	f.syncer, f.watcher, f.stop = nil, nil, nil
+	f.syncer, f.watcher, f.pending = nil, nil, nil
 }
 
 // background syncs, logging what goes wrong.

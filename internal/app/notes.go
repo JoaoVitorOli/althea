@@ -174,6 +174,7 @@ func (f *floatingNotes) flush() {
 		}
 	}
 	f.refreshSearch()
+	f.a.syncing.soon()
 }
 
 // refreshSearch lets the root search find notes by what they say now.

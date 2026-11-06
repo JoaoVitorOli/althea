@@ -114,12 +114,16 @@ type althea struct {
 }
 
 func (a *althea) ready() {
+	// Made before anything that may ask it to sync; off until setUpSync turns it on.
+	a.syncing = &folderSync{a: a}
 	s := a.Settings()
 	a.root = ui.NewRoot(a.catalog.T, a.loadTheme(s.Theme, mygo.Theme.IsDark()))
 	a.launcher = shell.Open(shell.Options{
 		View:       a.root.View,
 		Material:   a.root.Theme().Material.Kind,
 		ResetAfter: time.Duration(s.Window.ResetAfter),
+		// What was done in the launcher may have changed what syncs.
+		OnHide: func() { a.syncing.soon() },
 		OnShow: func(reset bool) {
 			if p := a.services.Paster; p != nil {
 				a.pasteTarget.Store(p.Foreground())
@@ -145,7 +149,10 @@ func (a *althea) ready() {
 	a.watchThemes()
 
 	// Settings reload on the watcher's goroutine; apply them on the main thread.
-	a.OnSettings(func(s config.Settings) { a.launcher.Window().Update(func() { a.apply(s) }) })
+	a.OnSettings(func(s config.Settings) {
+		a.launcher.Window().Update(func() { a.apply(s) })
+		a.syncing.soon()
+	})
 	mygo.Theme.OnUpdated(func() { a.launcher.Window().Update(a.reloadTheme) })
 
 	firstRun := a.needsOnboarding(context.Background())
@@ -197,6 +204,7 @@ func (a *althea) watchThemes() {
 	isTheme := func(name string) bool { return strings.HasSuffix(name, ".toml") }
 	w, err := fswatch.WatchDir(a.paths.Themes, isTheme, func() {
 		a.launcher.Window().Update(a.reloadTheme)
+		a.syncing.soon()
 	})
 	if err != nil {
 		a.log.Warn("themes not watched", "err", err)

@@ -27,6 +27,8 @@ type Options struct {
 	ResetAfter time.Duration
 	// OnShow runs as the launcher shows, with reset set when the view should start over.
 	OnShow func(reset bool)
+	// OnHide runs as the launcher hides.
+	OnHide func()
 	Log    *slog.Logger
 }
 
@@ -86,6 +88,9 @@ func (l *Launcher) Hide() {
 	}
 	l.hiddenAt = time.Now()
 	l.win.Hide()
+	if l.opts.OnHide != nil {
+		l.opts.OnHide()
+	}
 }
 
 // Toggle shows the launcher, or hides it if it shows.
