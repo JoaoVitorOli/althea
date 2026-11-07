@@ -301,7 +301,10 @@ func (a *althea) bindWinKey() (unbind func(), err error) {
 	})
 }
 
+// syncLogin adds Althea to Windows' startup or takes it out. A development build never starts at
+// login: it is a console program, and the installed app already does.
 func (a *althea) syncLogin(start bool) {
+	start = start && !mygo.IsDev()
 	if mygo.App.OpenAtLogin() == start {
 		return
 	}
