@@ -296,8 +296,9 @@ func fileSource(prefix, dir string, match func(name string) bool) foldersync.Sou
 			return out, nil
 		},
 		Apply: func(_ context.Context, name string, data []byte) error {
-			// Only a plain name this source would read: never a path out of dir.
-			if name != filepath.Base(name) || name == "." || name == ".." || !match(name) {
+			// Only a plain name this source would read, the same on every system: never a path,
+			// with either system's separator or a drive, nor a hidden file.
+			if strings.ContainsAny(name, `/\:`) || strings.HasPrefix(name, ".") || !match(name) {
 				return fmt.Errorf("refused the file name %q", name)
 			}
 			path := filepath.Join(dir, name)

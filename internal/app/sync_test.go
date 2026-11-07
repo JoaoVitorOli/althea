@@ -79,7 +79,9 @@ func TestSyncCarriesThemesAndSnippets(t *testing.T) {
 func TestFileSourceStaysInItsFolder(t *testing.T) {
 	dir := t.TempDir()
 	src := fileSource("theme/", filepath.Join(dir, "themes"), tomlFile)
-	for _, name := range []string{"../settings.toml", `..\settings.toml`, "sub/x.toml", "x.exe", ".."} {
+	for _, name := range []string{
+		"../settings.toml", `..\settings.toml`, "sub/x.toml", `sub\x.toml`, "C:x.toml", ".hidden.toml", "x.exe", "..",
+	} {
 		if err := src.Apply(context.Background(), name, []byte("x")); err == nil {
 			t.Errorf("wrote %q", name)
 		}
