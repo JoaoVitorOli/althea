@@ -111,11 +111,14 @@ type althea struct {
 	themes themeEditor
 	// syncing keeps the computers in step through the sync folder.
 	syncing *folderSync
+	// updates checks for and installs new versions.
+	updates *updater
 }
 
 func (a *althea) ready() {
 	// Made before anything that may ask it to sync; off until setUpSync turns it on.
 	a.syncing = &folderSync{a: a}
+	a.updates = newUpdater(a)
 	s := a.Settings()
 	a.root = ui.NewRoot(a.catalog.T, a.loadTheme(s.Theme, mygo.Theme.IsDark()))
 	a.launcher = shell.Open(shell.Options{
@@ -134,6 +137,7 @@ func (a *althea) ready() {
 			if a.search != nil {
 				go a.search.refresh()
 			}
+			a.updates.soon()
 		},
 		Log: a.log,
 	})
@@ -163,6 +167,7 @@ func (a *althea) ready() {
 	if firstRun || !mygo.App.WasOpenedAtLogin() {
 		a.launcher.Show() // started by the user: show what it does
 	}
+	a.updates.soon()
 	a.log.Info("ready", "hotkey", a.hotkey, "theme", a.root.Theme().Name, "since_start", time.Since(a.started))
 }
 

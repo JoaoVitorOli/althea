@@ -1,0 +1,70 @@
+# Builds a release when a version tag is pushed: the Windows installer and app, signed updates for
+# the apps already installed, and a portable zip, all on a draft release to review and publish.
+# Publishing it makes it the latest, which installed apps update to. See docs/release.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # the draft release, and the uploads to it
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: The tag is the version in mygo.json
+        run: |
+          version=$(jq -r .version mygo.json)
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::the tag $GITHUB_REF_NAME is not v$version, the version in mygo.json"
+            exit 1
+          fi
+          grep -q "^## $version\$" CHANGELOG.md || { echo "::error::CHANGELOG.md has no ## $version"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            awk -v v="## $VERSION" '$0 == v {on=1; next} /^## / {on=0} on' CHANGELOG.md > notes.md
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Althea $VERSION" --notes-file notes.md
+          fi
+
+      - name: Install NSIS, for the installer
+        run: sudo apt-get update && sudo apt-get install -y nsis
+
+      # Signs the updates with the key whose public half is in mygo.json, makes deltas from the
+      # versions published before, and uploads it all to the draft.
+      - name: Build and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: go tool mygo build -platform windows/amd64 -upload
+
+      # The same app, run from any folder: an althea.portable file beside it keeps its data there.
+      - name: Upload the portable zip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dir=$(mktemp -d)/Althea
+          mkdir -p "$dir"
+          cp build/windows-amd64/Althea.exe "$dir/"
+          cp build/windows-amd64/icon.png "$dir/"
+          touch "$dir/althea.portable"
+          cp LICENSE "$dir/LICENSE.txt"
+          zip="Althea-$VERSION-portable-amd64.zip"
+          (cd "$(dirname "$dir")" && zip -qr "$OLDPWD/$zip" Althea)
+          gh release upload "$GITHUB_REF_NAME" "$zip" --clobber

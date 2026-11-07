@@ -110,6 +110,7 @@ func (a *althea) setUpSearch() error {
 	a.root.Icons = &ui.Icons{Load: mygo.Shell.FileIcon, Loaded: func() { a.launcher.Window().Invalidate() }}
 	a.setUpSync()
 	settings.sync = a.syncing
+	settings.updates = a.updates
 	go s.refresh()
 	a.background.startAll()
 	mygo.App.OnWillQuit(func(*mygo.QuitEvent) { a.background.stopAll() })

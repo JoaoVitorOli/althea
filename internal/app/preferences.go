@@ -196,6 +196,8 @@ type settingsExtension struct {
 	editThemes func()
 	// sync is sync's setup; nil, or a system without a vault, offers none.
 	sync *folderSync
+	// updates checks for updates; nil, or a build that cannot update itself, offers none.
+	updates *updater
 }
 
 func (s *settingsExtension) Manifest() sdk.Manifest {
@@ -237,6 +239,9 @@ func (s *settingsExtension) Commands(ctx sdk.Context) []sdk.Command {
 	}
 	if s.sync != nil && s.sync.a.services.Vault != nil {
 		cmds = append(cmds, s.sync.command(ctx))
+	}
+	if s.updates != nil && s.updates.enabled() {
+		cmds = append(cmds, s.updates.command(ctx))
 	}
 	return cmds
 }

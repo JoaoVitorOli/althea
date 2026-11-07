@@ -8,7 +8,7 @@ Launchers like this usually keep their best features behind a subscription and s
 somewhere. Althea ships every feature free, keeps everything on your machine, and treats every
 feature as an extension you can read, change or add to in a fork.
 
-> **Status:** working towards v1. Windows 11 first; Linux follows in v1.1.
+> **Status:** v1.0 for Windows 11; Linux follows in v1.1.
 
 ## What works today
 
@@ -28,7 +28,15 @@ feature as an extension you can read, change or add to in a fork.
 
 The [spec](docs/spec.md) has everything v1 will do and the milestones towards it.
 
-## Run it
+## Install
+
+Download `Althea Setup <version> amd64.exe` from the
+[latest release](https://github.com/JoaoVitorOli/althea/releases/latest), or the portable zip to
+run it from any folder. Althea installs for your user, with no administrator rights, and updates
+itself when you allow it to check. It is not code-signed yet, so Windows SmartScreen asks before
+the first run.
+
+## Run it from source
 
 Requires Go 1.27.3 or later. Every other tool is pinned in a `go.mod`.
 
@@ -59,6 +67,9 @@ command (see [Script Commands](docs/extensions.md#script-commands)).
 | [Writing extensions](docs/extensions.md) | How to add a feature, in Go or as a script |
 | [Decision records](docs/adr/README.md) | Why each big choice was made |
 | [Contributing](CONTRIBUTING.md) | Setup, tooling and conventions |
+| [Releasing](docs/release.md) | How a version is built, signed and published |
+| [Audit](docs/audit/2026-11-v1.md) | What the v1 security and performance audit found |
+| [Changelog](CHANGELOG.md) | What each version changed |
 
 ## Privacy
 
